@@ -11,13 +11,20 @@ const mobileNavItems = [
 ];
 
 export function MobileNav() {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname !== '/' ? rawPathname.replace(/\/$/, '') : rawPathname;
+
+  // Active = longest matching href (prevents /produccion staying active on /produccion/historial)
+  const activeHref = mobileNavItems
+    .map((item) => item.href)
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-pb" data-testid="mobile-nav">
       <div className="flex items-center justify-around h-16">
         {mobileNavItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/login' && pathname.startsWith(item.href));
+          const isActive = item.href === activeHref;
           const Icon = item.icon;
           return (
             <Link

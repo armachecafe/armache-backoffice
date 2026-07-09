@@ -76,7 +76,10 @@ export function OrderTable({ orders, onFilterChange }: OrderTableProps) {
             {orders.map((order) => (
               <tr key={order.orderId} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
-                  <Link href={`/pedidos/${order.orderId}`} className="font-mono text-brand-primary hover:underline" data-testid={`order-row-${order.orderId}`}>
+                  {/* Static route + query param (?id=): reliable in static export.
+                      A dynamic [orderId] route can't be resolved for non-prerendered ids
+                      (falls back to '/' → RootPage → /dashboard). */}
+                  <Link href={`/pedidos/detalle/?id=${order.orderId}`} className="font-mono text-brand-primary hover:underline" data-testid={`order-row-${order.orderId}`}>
                     {order.orderCode}
                   </Link>
                   {order.type === 'B2B' && <span className="ml-1.5 text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">B2B</span>}

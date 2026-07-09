@@ -150,12 +150,12 @@ export interface CreateProductInput {
 }
 
 export interface CreateB2BOrderInput {
-  customerName: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  items: { sku: string; name: string; quantity: number; priceCents: number }[];
-  shippingAddress?: { recipientName: string; street: string; city: string; department: string; province: string };
-  notes?: string;
+  clientName: string;
+  clientCompany: string;
+  clientContact: { name: string; email: string; phone: string };
+  items: { sku: string; productName: string; quantity: number; unitPrice: number }[];
+  shippingAddress: { street: string; district: string; province: string; department: string; postalCode?: string; reference?: string } | null;
+  shippingMethod: { type: 'PICKUP'; pickupLocationId: string; pickupLocationName: string; cost: 0 } | { type: 'DELIVERY'; zoneId: string; zoneName: string; cost: number; estimatedDays: number };
 }
 
 export interface StockReportRow {

@@ -16,17 +16,20 @@ export function BackofficeLayout({ children }: BackofficeLayoutProps) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { role, isLoading: permLoading } = usePermissions();
   const router = useRouter();
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  // Normalize trailing slash (next.config has trailingSlash: true for static export)
+  const pathname = rawPathname !== '/' ? rawPathname.replace(/\/$/, '') : rawPathname;
+  const isLoginPage = pathname === '/login';
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!authLoading && !isAuthenticated && pathname !== '/login') {
+    if (!authLoading && !isAuthenticated && !isLoginPage) {
       router.replace('/login');
     }
-  }, [authLoading, isAuthenticated, pathname, router]);
+  }, [authLoading, isAuthenticated, isLoginPage, router]);
 
   // Skip layout for login page
-  if (pathname === '/login') {
+  if (isLoginPage) {
     return <>{children}</>;
   }
 

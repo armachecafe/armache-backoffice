@@ -6,16 +6,17 @@ import { staffApi } from '@/lib/api';
 
 export default function PedidoB2BPage() {
   const router = useRouter();
-  const [customerName, setCustomerName] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [notes, setNotes] = useState('');
-  const [items, setItems] = useState([{ sku: '', name: '', quantity: '', priceCents: '' }]);
+  const [clientName, setClientName] = useState('');
+  const [clientCompany, setClientCompany] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [items, setItems] = useState([{ sku: '', productName: '', quantity: '', unitPrice: '' }]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   function addItem() {
-    setItems([...items, { sku: '', name: '', quantity: '', priceCents: '' }]);
+    setItems([...items, { sku: '', productName: '', quantity: '', unitPrice: '' }]);
   }
 
   function updateItem(idx: number, field: string, value: string) {
@@ -31,27 +32,28 @@ export default function PedidoB2BPage() {
 
   const totalCents = items.reduce((sum, item) => {
     const qty = Number(item.quantity) || 0;
-    const price = Math.round((Number(item.priceCents) || 0) * 100);
+    const price = Math.round((Number(item.unitPrice) || 0) * 100);
     return sum + qty * price;
   }, 0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!customerName || items.every((i) => !i.sku)) return;
+    if (!clientName || !clientCompany || !contactEmail || items.every((i) => !i.sku)) return;
     setSubmitting(true);
     setError('');
     try {
       await staffApi.createB2BOrder({
-        customerName,
-        customerEmail: customerEmail || undefined,
-        customerPhone: customerPhone || undefined,
+        clientName,
+        clientCompany,
+        clientContact: { name: contactName || clientName, email: contactEmail, phone: contactPhone },
         items: items.filter((i) => i.sku && Number(i.quantity) > 0).map((i) => ({
           sku: i.sku,
-          name: i.name || i.sku,
+          productName: i.productName || i.sku,
           quantity: Number(i.quantity),
-          priceCents: Math.round(Number(i.priceCents) * 100),
+          unitPrice: Math.round(Number(i.unitPrice) * 100),
         })),
-        notes: notes || undefined,
+        shippingAddress: null,
+        shippingMethod: { type: 'PICKUP', pickupLocationId: 'SEDE_PRINCIPAL', pickupLocationName: 'Sede Principal', cost: 0 },
       });
       router.push('/pedidos');
     } catch (err) {
@@ -67,13 +69,15 @@ export default function PedidoB2BPage() {
       <p className="text-sm text-gray-500">Crea un pedido coordinado por WhatsApp/teléfono. No requiere pasarela de pago.</p>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-        {/* Customer */}
+        {/* Client info */}
         <fieldset className="space-y-3">
           <legend className="text-sm font-semibold text-gray-700">Cliente</legend>
-          <input type="text" required placeholder="Nombre / Empresa *" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-customer-name" />
-          <div className="grid grid-cols-2 gap-3">
-            <input type="email" placeholder="Email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-customer-email" />
-            <input type="tel" placeholder="Teléfono" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-customer-phone" />
+          <input type="text" required placeholder="Nombre del cliente *" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-client-name" />
+          <input type="text" required placeholder="Empresa *" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-client-company" />
+          <div className="grid grid-cols-3 gap-3">
+            <input type="text" placeholder="Contacto" value={contactName} onChange={(e) => setContactName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-contact-name" />
+            <input type="email" required placeholder="Email *" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-contact-email" />
+            <input type="tel" required placeholder="Teléfono *" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-contact-phone" />
           </div>
         </fieldset>
 
@@ -83,9 +87,9 @@ export default function PedidoB2BPage() {
           {items.map((item, idx) => (
             <div key={idx} className="flex gap-2 items-center">
               <input type="text" placeholder="SKU" value={item.sku} onChange={(e) => updateItem(idx, 'sku', e.target.value)} className="w-28 px-2 py-2 border border-gray-300 rounded-lg text-sm" data-testid={`b2b-item-sku-${idx}`} />
-              <input type="text" placeholder="Nombre" value={item.name} onChange={(e) => updateItem(idx, 'name', e.target.value)} className="flex-1 px-2 py-2 border border-gray-300 rounded-lg text-sm" data-testid={`b2b-item-name-${idx}`} />
+              <input type="text" placeholder="Producto" value={item.productName} onChange={(e) => updateItem(idx, 'productName', e.target.value)} className="flex-1 px-2 py-2 border border-gray-300 rounded-lg text-sm" data-testid={`b2b-item-name-${idx}`} />
               <input type="number" placeholder="Qty" min="1" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-sm" data-testid={`b2b-item-qty-${idx}`} />
-              <input type="number" step="0.01" placeholder="S/" min="0" value={item.priceCents} onChange={(e) => updateItem(idx, 'priceCents', e.target.value)} className="w-20 px-2 py-2 border border-gray-300 rounded-lg text-sm" data-testid={`b2b-item-price-${idx}`} />
+              <input type="number" step="0.01" placeholder="S/" min="0" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20 px-2 py-2 border border-gray-300 rounded-lg text-sm" data-testid={`b2b-item-price-${idx}`} />
               {items.length > 1 && <button type="button" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600 text-xs">✕</button>}
             </div>
           ))}
@@ -93,15 +97,9 @@ export default function PedidoB2BPage() {
           <p className="text-sm font-medium text-gray-700 text-right">Total: S/ {(totalCents / 100).toFixed(2)}</p>
         </fieldset>
 
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notas internas</label>
-          <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej: coordinado por WhatsApp, entrega martes" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="b2b-notes" />
-        </div>
+        {error && <p className="text-sm text-red-600" data-testid="b2b-error">{error}</p>}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <button type="submit" disabled={submitting || !customerName} className="w-full py-2.5 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-primary/90 disabled:opacity-50" data-testid="b2b-submit">
+        <button type="submit" disabled={submitting || !clientName || !clientCompany || !contactEmail} className="w-full py-2.5 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-primary/90 disabled:opacity-50" data-testid="b2b-submit">
           {submitting ? 'Creando...' : 'Crear Pedido B2B'}
         </button>
       </form>

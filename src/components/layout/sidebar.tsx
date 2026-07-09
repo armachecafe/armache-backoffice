@@ -29,10 +29,20 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  // Normalize trailing slash (next.config has trailingSlash: true for static export)
+  const pathname = rawPathname !== '/' ? rawPathname.replace(/\/$/, '') : rawPathname;
   const { can } = usePermissions();
 
   const visibleItems = navItems.filter((item) => !item.permission || can(item.permission));
+
+  // Active = the item whose href is the LONGEST match for the current path.
+  // Prevents a parent (e.g. /produccion) from staying active on a child
+  // route (/produccion/historial) that has its own nav item.
+  const activeHref = visibleItems
+    .map((item) => item.href)
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <aside
@@ -50,7 +60,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
         {visibleItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = item.href === activeHref;
           const Icon = item.icon;
           return (
             <Link

@@ -76,7 +76,10 @@ export default function CatalogoAdminPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Link href={`/catalogo/${p.productId}`} className="text-gray-400 hover:text-brand-primary" title="Editar" data-testid={`catalogo-edit-${p.productId}`}><Pencil className="w-4 h-4" /></Link>
+                      {/* Static route + query param (?id=): reliable in static export.
+                          A dynamic [productId] route can't be resolved for non-prerendered ids
+                          (falls back to '/' → RootPage → /dashboard). */}
+                      <Link href={`/catalogo/editar/?id=${p.productId}`} className="text-gray-400 hover:text-brand-primary" title="Editar" data-testid={`catalogo-edit-${p.productId}`}><Pencil className="w-4 h-4" /></Link>
                       {p.published && (
                         <button onClick={() => handleUnpublish(p.productId)} className="text-gray-400 hover:text-red-600" title="Despublicar" data-testid={`catalogo-unpublish-${p.productId}`}><EyeOff className="w-4 h-4" /></button>
                       )}

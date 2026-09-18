@@ -9,7 +9,6 @@ const nextConfig = {
     unoptimized: true,
   },
   trailingSlash: true,
-  transpilePackages: ['@armache/shared-types'],
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://api.armachecafe.com',
     // Staff pool (armache-staff = us-east-1_FRAnOWoc1) — NOT the customers/store pool (us-east-1_jw3PdJZAN).

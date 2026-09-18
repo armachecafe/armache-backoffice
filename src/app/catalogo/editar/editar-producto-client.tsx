@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { staffApi, type AdminProduct } from '@/lib/api';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { ProductImageManager } from '@/components/catalog/product-image-manager';
 
 export function EditarProductoClient() {
   const router = useRouter();
@@ -97,12 +98,13 @@ export function EditarProductoClient() {
         <h1 className="text-2xl font-display font-bold text-gray-900">Editar Producto</h1>
       </div>
 
-      {/* Thumbnail preview */}
-      {product?.thumbnailUrl && (
-        <div className="flex items-center gap-4">
-          <img src={product.thumbnailUrl} alt={product.name} className="w-20 h-20 rounded-lg object-cover border border-gray-200" />
-          <p className="text-xs text-gray-400">Para actualizar la imagen, usa la sección de imágenes del producto (en construcción).</p>
-        </div>
+      {/* Product image manager */}
+      {product && (
+        <ProductImageManager
+          productId={product.productId}
+          productName={product.name}
+          initialImages={product.images ?? []}
+        />
       )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">

@@ -27,7 +27,7 @@ export default function NuevoProductoPage() {
     setSubmitting(true);
     setError('');
     try {
-      await staffApi.createProduct({
+      const result = await staffApi.createProduct({
         name,
         slug,
         description: description || undefined,
@@ -36,7 +36,8 @@ export default function NuevoProductoPage() {
         costCents: costCents ? Math.round(Number(costCents) * 100) : undefined,
         lowStockThreshold: lowStockThreshold ? Number(lowStockThreshold) : undefined,
       });
-      router.push('/catalogo');
+      // Redirect to edit page where the image manager is available
+      router.push(`/catalogo/editar/?id=${result.productId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear producto');
     } finally {
@@ -81,6 +82,10 @@ export default function NuevoProductoPage() {
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-lg">
+          💡 Tras crear el producto podrás subir hasta 3 imágenes desde la pantalla de edición.
+        </p>
 
         <button type="submit" disabled={submitting || !name || !priceCents} className="w-full py-2.5 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-primary/90 disabled:opacity-50" data-testid="product-submit">
           {submitting ? 'Creando...' : 'Crear Producto'}

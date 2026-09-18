@@ -23,6 +23,7 @@ async function fetchStaffApi<T>(path: string, options?: RequestInit): Promise<T>
     const body = await res.text().catch(() => '');
     throw new Error(`API error: ${res.status} ${res.statusText} ${body}`);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -118,6 +119,34 @@ export interface StaffPermissions {
 
 // --- Ronda 2 Types ---
 
+export type AdminProductImageStatus = 'CONFIRMING' | 'ACTIVE' | 'DELETING';
+
+export interface AdminProductImage {
+  imageId: string;
+  url: string;
+  thumbnailUrl: string;
+  mediumUrl: string;
+  altText: string;
+  sortOrder: number;
+  isPrimary: boolean;
+  status: AdminProductImageStatus;
+}
+
+export interface ProductImageUploadGrant {
+  imageId: string;
+  uploadUrl: string;
+  expiresAt: number | string;
+  signedHeaders: Record<string, string>;
+}
+
+interface ProductImageUploadGrantResponse {
+  imageId: string;
+  uploadUrl: string;
+  expiresAt: number | string;
+  requiredHeaders?: Record<string, string>;
+  headers?: Record<string, string>;
+}
+
 export interface AdminProduct {
   productId: string;
   sku: string;
@@ -129,6 +158,7 @@ export interface AdminProduct {
   priceCents: number;
   costCents?: number;
   thumbnailUrl?: string;
+  images?: AdminProductImage[];
   inStock: boolean;
   stockQuantity?: number;
   lowStockThreshold?: number;
@@ -287,6 +317,26 @@ export const staffApi = {
     fetchStaffApi<{ success: boolean }>(`/admin/catalog/products/${productId}`, { method: 'PATCH', body: JSON.stringify(data) }),
   unpublishProduct: (productId: string) =>
     fetchStaffApi<{ success: boolean }>(`/admin/catalog/products/${productId}/unpublish`, { method: 'POST' }),
+  requestProductImageUpload: async (productId: string, data: { contentType: string; sizeBytes: number }) => {
+    const response = await fetchStaffApi<ProductImageUploadGrantResponse>(
+      `/admin/catalog/products/${productId}/images/presign`,
+      { method: 'POST', body: JSON.stringify(data) },
+    );
+    const signedHeaders = response.requiredHeaders ?? response.headers;
+    if (!signedHeaders || Object.keys(signedHeaders).length === 0) {
+      throw new Error('La autorización de carga no incluyó los headers requeridos');
+    }
+    return { ...response, signedHeaders } satisfies ProductImageUploadGrant;
+  },
+  confirmProductImage: (productId: string, imageId: string) =>
+    fetchStaffApi<AdminProductImage>(`/admin/catalog/products/${productId}/images/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ imageId }),
+    }),
+  deleteProductImage: (productId: string, imageId: string) =>
+    fetchStaffApi<void>(`/admin/catalog/products/${productId}/images/${encodeURIComponent(imageId)}`, {
+      method: 'DELETE',
+    }),
 
   // --- Ronda 2: B2B Orders (BACK-04) ---
   createB2BOrder: (data: CreateB2BOrderInput) =>

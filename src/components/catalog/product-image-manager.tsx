@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImagePlus, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import {
-  staffApi,
-  type AdminProductImage,
+  backofficeApi,
+  type BackofficeProductImage,
   type ProductImageUploadGrant,
 } from '@/lib/api';
 
@@ -23,10 +23,10 @@ interface PendingUpload {
 interface ProductImageManagerProps {
   productId: string;
   productName: string;
-  initialImages: AdminProductImage[];
+  initialImages: BackofficeProductImage[];
 }
 
-function sortImages(images: AdminProductImage[]): AdminProductImage[] {
+function sortImages(images: BackofficeProductImage[]): BackofficeProductImage[] {
   return [...images].sort(
     (left, right) => left.sortOrder - right.sortOrder || left.imageId.localeCompare(right.imageId),
   );
@@ -148,7 +148,7 @@ export function ProductImageManager({
       let pending = pendingUpload;
       if (!pending || (!pending.uploaded && isGrantExpired(pending.grant.expiresAt))) {
         setOperation('presigning');
-        const grant = await staffApi.requestProductImageUpload(productId, {
+        const grant = await backofficeApi.requestProductImageUpload(productId, {
           contentType: selectedFile.type,
           sizeBytes: selectedFile.size,
         });
@@ -165,7 +165,7 @@ export function ProductImageManager({
       }
 
       setOperation('confirming');
-      const confirmed = await staffApi.confirmProductImage(productId, pending.imageId);
+      const confirmed = await backofficeApi.confirmProductImage(productId, pending.imageId);
       setImages((current) => sortImages([
         ...current.filter((image) => image.imageId !== confirmed.imageId),
         confirmed,
@@ -185,7 +185,7 @@ export function ProductImageManager({
     setError(null);
     setMessage(null);
     try {
-      const confirmed = await staffApi.confirmProductImage(productId, imageId);
+      const confirmed = await backofficeApi.confirmProductImage(productId, imageId);
       setImages((current) => sortImages([
         ...current.filter((image) => image.imageId !== confirmed.imageId),
         confirmed,
@@ -198,7 +198,7 @@ export function ProductImageManager({
       setOperation('idle');
     }
   }
-  async function deleteImage(image: AdminProductImage) {
+  async function deleteImage(image: BackofficeProductImage) {
     if (deletingIds.has(image.imageId)) return;
     const confirmed = window.confirm(`¿Eliminar la imagen de ${productName}?`);
     if (!confirmed) return;
@@ -207,8 +207,8 @@ export function ProductImageManager({
     setError(null);
     setMessage(null);
     try {
-      await staffApi.deleteProductImage(productId, image.imageId);
-      const refreshed = await staffApi.getProduct(productId);
+      await backofficeApi.deleteProductImage(productId, image.imageId);
+      const refreshed = await backofficeApi.getProduct(productId);
       setImages(sortImages(refreshed.images ?? []));
       setMessage('Imagen eliminada correctamente.');
     } catch (caught) {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Search, ArrowDown, ArrowUp } from 'lucide-react';
-import { staffApi, type LotTraceability, type LotSearchResult } from '@/lib/api';
+import { backofficeApi, type LotTraceability, type LotSearchResult } from '@/lib/api';
 
 export default function TrazabilidadAdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,7 +16,7 @@ export default function TrazabilidadAdminPage() {
     setLoading(true);
     setSelectedLot(null);
     try {
-      const results = await staffApi.searchLots(searchQuery.trim());
+      const results = await backofficeApi.searchLots(searchQuery.trim());
       setSearchResults(results);
     } catch {
       setSearchResults([]);
@@ -28,7 +28,7 @@ export default function TrazabilidadAdminPage() {
   async function handleSelectLot(lotId: string) {
     setLoading(true);
     try {
-      const data = await staffApi.getLotTraceability(lotId);
+      const data = await backofficeApi.getLotTraceability(lotId);
       setSelectedLot(data);
     } catch {
       setSelectedLot(null);

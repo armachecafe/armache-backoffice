@@ -1,13 +1,13 @@
 /**
- * Backoffice API client — all calls authenticated via Staff Pool token.
+ * Backoffice API client — all calls authenticated via Backoffice Pool token.
  */
 import { getIdToken } from '@/lib/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.armachecafe.com';
 
-async function fetchStaffApi<T>(path: string, options?: RequestInit): Promise<T> {
+async function fetchBackofficeApi<T>(path: string, options?: RequestInit): Promise<T> {
   const token = await getIdToken();
-  if (!token) throw new Error('No staff session');
+  if (!token) throw new Error('No backoffice session');
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -31,7 +31,7 @@ async function fetchStaffApi<T>(path: string, options?: RequestInit): Promise<T>
 
 export type OrderStatus = 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
 
-export interface AdminOrderSummary {
+export interface BackofficeOrderSummary {
   orderId: string;
   orderCode: string;
   status: OrderStatus;
@@ -43,7 +43,7 @@ export interface AdminOrderSummary {
   createdAt: string;
 }
 
-export interface AdminOrderDetail {
+export interface BackofficeOrderDetail {
   orderId: string;
   orderCode: string;
   status: OrderStatus;
@@ -112,16 +112,16 @@ export interface ProductionOrder {
   closedAt?: string;
 }
 
-export interface StaffPermissions {
+export interface BackofficePermissions {
   role: string;
   permissions: string[];
 }
 
 // --- Ronda 2 Types ---
 
-export type AdminProductImageStatus = 'CONFIRMING' | 'ACTIVE' | 'DELETING';
+export type BackofficeProductImageStatus = 'CONFIRMING' | 'ACTIVE' | 'DELETING';
 
-export interface AdminProductImage {
+export interface BackofficeProductImage {
   imageId: string;
   url: string;
   thumbnailUrl: string;
@@ -129,7 +129,7 @@ export interface AdminProductImage {
   altText: string;
   sortOrder: number;
   isPrimary: boolean;
-  status: AdminProductImageStatus;
+  status: BackofficeProductImageStatus;
 }
 
 export interface ProductImageUploadGrant {
@@ -147,7 +147,7 @@ interface ProductImageUploadGrantResponse {
   headers?: Record<string, string>;
 }
 
-export interface AdminProduct {
+export interface BackofficeProduct {
   productId: string;
   sku: string;
   name: string;
@@ -158,7 +158,7 @@ export interface AdminProduct {
   priceCents: number;
   costCents?: number;
   thumbnailUrl?: string;
-  images?: AdminProductImage[];
+  images?: BackofficeProductImage[];
   inStock: boolean;
   stockQuantity?: number;
   lowStockThreshold?: number;
@@ -229,12 +229,12 @@ export interface LotSearchResult {
 
 // --- API Methods ---
 
-export const staffApi = {
+export const backofficeApi = {
   // Permissions
-  getMyPermissions: () => fetchStaffApi<StaffPermissions>('/staff/me/permissions'),
+  getMyPermissions: () => fetchBackofficeApi<BackofficePermissions>('/backoffice/me/permissions'),
 
   // Dashboard
-  getDashboardStats: () => fetchStaffApi<DashboardStats>('/admin/dashboard/stats'),
+  getDashboardStats: () => fetchBackofficeApi<DashboardStats>('/backoffice/dashboard/stats'),
 
   // Orders
   listOrders: (params?: { status?: string; search?: string; pageSize?: number; cursor?: string }) => {
@@ -243,51 +243,51 @@ export const staffApi = {
     if (params?.search) qs.set('search', params.search);
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
     if (params?.cursor) qs.set('cursor', params.cursor);
-    return fetchStaffApi<{ items: AdminOrderSummary[]; nextCursor?: string }>(`/admin/orders?${qs}`);
+    return fetchBackofficeApi<{ items: BackofficeOrderSummary[]; nextCursor?: string }>(`/backoffice/orders?${qs}`);
   },
-  getOrder: (orderId: string) => fetchStaffApi<AdminOrderDetail>(`/admin/orders/${orderId}`),
+  getOrder: (orderId: string) => fetchBackofficeApi<BackofficeOrderDetail>(`/backoffice/orders/${orderId}`),
   transitionOrder: (orderId: string, newStatus: OrderStatus, data?: { trackingNumber?: string; courierName?: string }) =>
-    fetchStaffApi<{ success: boolean }>(`/admin/orders/${orderId}/transition`, {
+    fetchBackofficeApi<{ success: boolean }>(`/backoffice/orders/${orderId}/transition`, {
       method: 'POST',
       body: JSON.stringify({ newStatus, ...data }),
     }),
   addOrderNote: (orderId: string, text: string) =>
-    fetchStaffApi<{ noteId: string }>(`/admin/orders/${orderId}/notes`, {
+    fetchBackofficeApi<{ noteId: string }>(`/backoffice/orders/${orderId}/notes`, {
       method: 'POST',
       body: JSON.stringify({ text }),
     }),
 
   // WMS
-  getStockAlerts: () => fetchStaffApi<{ alerts: StockAlert[] }>('/admin/wms/alerts').then((r) => r.alerts),
-  listPurchaseOrders: () => fetchStaffApi<{ items: PurchaseOrder[] }>('/admin/wms/purchase-orders').then((r) => r.items),
+  getStockAlerts: () => fetchBackofficeApi<{ alerts: StockAlert[] }>('/backoffice/wms/alerts').then((r) => r.alerts),
+  listPurchaseOrders: () => fetchBackofficeApi<{ items: PurchaseOrder[] }>('/backoffice/wms/purchase-orders').then((r) => r.items),
   createReception: (poId: string, lines: { sku: string; receivedQty: number }[], note?: string) =>
-    fetchStaffApi<{ success: boolean }>('/admin/wms/receptions', {
+    fetchBackofficeApi<{ success: boolean }>('/backoffice/wms/receptions', {
       method: 'POST',
       body: JSON.stringify({ poId, lines, note }),
     }),
-  listTransfers: () => fetchStaffApi<{ items: Transfer[] }>('/admin/wms/transfers').then((r) => r.items),
+  listTransfers: () => fetchBackofficeApi<{ items: Transfer[] }>('/backoffice/wms/transfers').then((r) => r.items),
   createTransfer: (data: { fromLocation: string; toLocation: string; items: { sku: string; quantity: number; lotCode?: string }[] }) =>
-    fetchStaffApi<{ transferId: string }>('/admin/wms/transfers', {
+    fetchBackofficeApi<{ transferId: string }>('/backoffice/wms/transfers', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   confirmTransfer: (transferId: string) =>
-    fetchStaffApi<{ success: boolean }>(`/admin/wms/transfers/${transferId}/confirm`, { method: 'POST' }),
+    fetchBackofficeApi<{ success: boolean }>(`/backoffice/wms/transfers/${transferId}/confirm`, { method: 'POST' }),
 
   // MES
   listProductionOrders: (params?: { status?: string; process?: string }) => {
     const qs = new URLSearchParams();
     if (params?.status) qs.set('status', params.status);
     if (params?.process) qs.set('process', params.process);
-    return fetchStaffApi<{ items: ProductionOrder[] }>(`/admin/mes/orders?${qs}`).then((r) => r.items);
+    return fetchBackofficeApi<{ items: ProductionOrder[] }>(`/backoffice/mes/orders?${qs}`).then((r) => r.items);
   },
   createProductionOrder: (data: { process: string; inputSku: string; inputLotCode: string; inputQtyKg: number }) =>
-    fetchStaffApi<{ orderId: string }>('/admin/mes/orders', {
+    fetchBackofficeApi<{ orderId: string }>('/backoffice/mes/orders', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   closeProductionOrder: (orderId: string, data: { outputQtyKg: number; wasteKg: number }) =>
-    fetchStaffApi<{ outputLotCode: string }>(`/admin/mes/orders/${orderId}/close`, {
+    fetchBackofficeApi<{ outputLotCode: string }>(`/backoffice/mes/orders/${orderId}/close`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -298,7 +298,7 @@ export const staffApi = {
     if (params?.dateTo) qs.set('dateTo', params.dateTo);
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
     if (params?.cursor) qs.set('cursor', params.cursor);
-    return fetchStaffApi<{ items: ProductionOrder[]; nextCursor?: string }>(`/admin/mes/history?${qs}`);
+    return fetchBackofficeApi<{ items: ProductionOrder[]; nextCursor?: string }>(`/backoffice/mes/history?${qs}`);
   },
 
   // --- Ronda 2: Catalog Admin (BACK-02) ---
@@ -308,18 +308,18 @@ export const staffApi = {
     if (params?.search) qs.set('search', params.search);
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
     if (params?.cursor) qs.set('cursor', params.cursor);
-    return fetchStaffApi<{ items: AdminProduct[]; nextCursor?: string }>(`/admin/catalog/products?${qs}`);
+    return fetchBackofficeApi<{ items: BackofficeProduct[]; nextCursor?: string }>(`/backoffice/catalog/products?${qs}`);
   },
-  getProduct: (productId: string) => fetchStaffApi<AdminProduct>(`/admin/catalog/products/${productId}`),
+  getProduct: (productId: string) => fetchBackofficeApi<BackofficeProduct>(`/backoffice/catalog/products/${productId}`),
   createProduct: (data: CreateProductInput) =>
-    fetchStaffApi<{ productId: string }>('/admin/catalog/products', { method: 'POST', body: JSON.stringify(data) }),
+    fetchBackofficeApi<{ productId: string }>('/backoffice/catalog/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (productId: string, data: Partial<CreateProductInput>) =>
-    fetchStaffApi<{ success: boolean }>(`/admin/catalog/products/${productId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    fetchBackofficeApi<{ success: boolean }>(`/backoffice/catalog/products/${productId}`, { method: 'PATCH', body: JSON.stringify(data) }),
   unpublishProduct: (productId: string) =>
-    fetchStaffApi<{ success: boolean }>(`/admin/catalog/products/${productId}/unpublish`, { method: 'POST' }),
+    fetchBackofficeApi<{ success: boolean }>(`/backoffice/catalog/products/${productId}/unpublish`, { method: 'POST' }),
   requestProductImageUpload: async (productId: string, data: { contentType: string; sizeBytes: number }) => {
-    const response = await fetchStaffApi<ProductImageUploadGrantResponse>(
-      `/admin/catalog/products/${productId}/images/presign`,
+    const response = await fetchBackofficeApi<ProductImageUploadGrantResponse>(
+      `/backoffice/catalog/products/${productId}/images/presign`,
       { method: 'POST', body: JSON.stringify(data) },
     );
     const signedHeaders = response.requiredHeaders ?? response.headers;
@@ -329,38 +329,38 @@ export const staffApi = {
     return { ...response, signedHeaders } satisfies ProductImageUploadGrant;
   },
   confirmProductImage: (productId: string, imageId: string) =>
-    fetchStaffApi<AdminProductImage>(`/admin/catalog/products/${productId}/images/confirm`, {
+    fetchBackofficeApi<BackofficeProductImage>(`/backoffice/catalog/products/${productId}/images/confirm`, {
       method: 'POST',
       body: JSON.stringify({ imageId }),
     }),
   deleteProductImage: (productId: string, imageId: string) =>
-    fetchStaffApi<void>(`/admin/catalog/products/${productId}/images/${encodeURIComponent(imageId)}`, {
+    fetchBackofficeApi<void>(`/backoffice/catalog/products/${productId}/images/${encodeURIComponent(imageId)}`, {
       method: 'DELETE',
     }),
 
   // --- Ronda 2: B2B Orders (BACK-04) ---
   createB2BOrder: (data: CreateB2BOrderInput) =>
-    fetchStaffApi<{ orderId: string; orderCode: string }>('/admin/orders/b2b', { method: 'POST', body: JSON.stringify(data) }),
+    fetchBackofficeApi<{ orderId: string; orderCode: string }>('/backoffice/orders/b2b', { method: 'POST', body: JSON.stringify(data) }),
 
   // --- Ronda 2: Reports (BACK-05) ---
-  getStockReport: () => fetchStaffApi<{ items: StockReportRow[] }>('/admin/reports/stock').then((r) => r.items),
+  getStockReport: () => fetchBackofficeApi<{ items: StockReportRow[] }>('/backoffice/reports/stock').then((r) => r.items),
   getSalesReport: (params: { dateFrom: string; dateTo: string }) => {
     const qs = new URLSearchParams(params);
-    return fetchStaffApi<SalesReport>(`/admin/reports/sales?${qs}`);
+    return fetchBackofficeApi<SalesReport>(`/backoffice/reports/sales?${qs}`);
   },
   getProductionReport: (params: { dateFrom: string; dateTo: string }) => {
     const qs = new URLSearchParams(params);
-    return fetchStaffApi<ProductionReport>(`/admin/reports/production?${qs}`);
+    return fetchBackofficeApi<ProductionReport>(`/backoffice/reports/production?${qs}`);
   },
 
   // --- Ronda 2: Returns (WMS-06) ---
   createReturn: (orderId: string, items: { sku: string; quantity: number; reason: string }[]) =>
-    fetchStaffApi<{ returnId: string }>(`/admin/orders/${orderId}/returns`, { method: 'POST', body: JSON.stringify({ items }) }),
+    fetchBackofficeApi<{ returnId: string }>(`/backoffice/orders/${orderId}/returns`, { method: 'POST', body: JSON.stringify({ items }) }),
   confirmReturnReception: (returnId: string) =>
-    fetchStaffApi<{ success: boolean }>(`/admin/wms/returns/${returnId}/confirm`, { method: 'POST' }),
+    fetchBackofficeApi<{ success: boolean }>(`/backoffice/wms/returns/${returnId}/confirm`, { method: 'POST' }),
 
   // --- Ronda 2: Traceability Admin (TRZ-02) ---
-  getLotTraceability: (lotId: string) => fetchStaffApi<LotTraceability>(`/admin/traceability/lots/${lotId}`),
+  getLotTraceability: (lotId: string) => fetchBackofficeApi<LotTraceability>(`/backoffice/traceability/lots/${lotId}`),
   searchLots: (query: string) =>
-    fetchStaffApi<{ items: LotSearchResult[] }>(`/admin/traceability/lots?search=${encodeURIComponent(query)}`).then((r) => r.items),
+    fetchBackofficeApi<{ items: LotSearchResult[] }>(`/backoffice/traceability/lots?search=${encodeURIComponent(query)}`).then((r) => r.items),
 };

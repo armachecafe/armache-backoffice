@@ -1,5 +1,5 @@
 /**
- * Staff authentication via Cognito Staff Pool.
+ * Backoffice authentication via Cognito Backoffice Pool.
  * Used by backoffice/operator panel.
  */
 import {
@@ -9,12 +9,14 @@ import {
   CognitoUserSession,
 } from 'amazon-cognito-identity-js';
 
-const POOL_ID = process.env.NEXT_PUBLIC_STAFF_POOL_ID || '';
-const CLIENT_ID = process.env.NEXT_PUBLIC_STAFF_CLIENT_ID || '';
+// TRANSITIONAL fallback (removed in P5): the deploy env may still export
+// NEXT_PUBLIC_STAFF_* until it is updated. Values are identical either way.
+const POOL_ID = process.env.NEXT_PUBLIC_BACKOFFICE_POOL_ID || process.env.NEXT_PUBLIC_STAFF_POOL_ID || '';
+const CLIENT_ID = process.env.NEXT_PUBLIC_BACKOFFICE_CLIENT_ID || process.env.NEXT_PUBLIC_STAFF_CLIENT_ID || '';
 
 function getUserPool() {
   if (!POOL_ID || !CLIENT_ID) {
-    throw new Error('Staff Cognito Pool not configured. Set NEXT_PUBLIC_STAFF_POOL_ID and NEXT_PUBLIC_STAFF_CLIENT_ID.');
+    throw new Error('Backoffice Cognito Pool not configured. Set NEXT_PUBLIC_BACKOFFICE_POOL_ID and NEXT_PUBLIC_BACKOFFICE_CLIENT_ID.');
   }
   return new CognitoUserPool({
     UserPoolId: POOL_ID,
@@ -22,7 +24,7 @@ function getUserPool() {
   });
 }
 
-export interface StaffUser {
+export interface BackofficeUser {
   userId: string;
   email: string;
   givenName?: string;
@@ -30,7 +32,7 @@ export interface StaffUser {
   role?: string;
 }
 
-export function signIn(email: string, password: string): Promise<StaffUser> {
+export function signIn(email: string, password: string): Promise<BackofficeUser> {
   return new Promise((resolve, reject) => {
     const pool = getUserPool();
     const cognitoUser = new CognitoUser({ Username: email, Pool: pool });
@@ -84,7 +86,7 @@ export async function getIdToken(): Promise<string | null> {
   return session?.getIdToken().getJwtToken() ?? null;
 }
 
-export async function getCurrentStaffUser(): Promise<StaffUser | null> {
+export async function getCurrentBackofficeUser(): Promise<BackofficeUser | null> {
   const session = await getSession();
   if (!session) return null;
   const payload = session.getIdToken().decodePayload();

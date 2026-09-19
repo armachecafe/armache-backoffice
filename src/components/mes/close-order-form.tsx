@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { staffApi, type ProductionOrder } from '@/lib/api';
+import { backofficeApi, type ProductionOrder } from '@/lib/api';
 
 interface CloseOrderFormProps {
   order: ProductionOrder;
@@ -26,7 +26,7 @@ export function CloseOrderForm({ order, onSuccess, onCancel }: CloseOrderFormPro
     setSubmitting(true);
     setError('');
     try {
-      await staffApi.closeProductionOrder(order.orderId, { outputQtyKg: output, wasteKg: waste });
+      await backofficeApi.closeProductionOrder(order.orderId, { outputQtyKg: output, wasteKg: waste });
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cerrar orden');

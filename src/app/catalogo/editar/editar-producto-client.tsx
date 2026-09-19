@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { staffApi, type AdminProduct } from '@/lib/api';
+import { backofficeApi, type BackofficeProduct } from '@/lib/api';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { ProductImageManager } from '@/components/catalog/product-image-manager';
@@ -13,7 +13,7 @@ export function EditarProductoClient() {
   // productId comes from the query string (?id=...), read at runtime — reliable in static export.
   const productId = searchParams.get('id') ?? '';
 
-  const [product, setProduct] = useState<AdminProduct | null>(null);
+  const [product, setProduct] = useState<BackofficeProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -28,7 +28,7 @@ export function EditarProductoClient() {
 
   useEffect(() => {
     if (!productId) return;
-    staffApi.getProduct(productId)
+    backofficeApi.getProduct(productId)
       .then((p) => {
         setProduct(p);
         setName(p.name);
@@ -50,7 +50,7 @@ export function EditarProductoClient() {
     setError('');
     setSuccess('');
     try {
-      await staffApi.updateProduct(productId, {
+      await backofficeApi.updateProduct(productId, {
         name,
         slug,
         description: description || undefined,

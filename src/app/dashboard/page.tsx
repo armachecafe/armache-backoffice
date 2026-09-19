@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DollarSign, ShoppingCart, Factory, AlertTriangle } from 'lucide-react';
-import { staffApi, type DashboardStats, type StockAlert } from '@/lib/api';
+import { backofficeApi, type DashboardStats, type StockAlert } from '@/lib/api';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { StockAlerts } from '@/components/dashboard/stock-alerts';
 import { OrdersOverview } from '@/components/dashboard/orders-overview';
@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([staffApi.getDashboardStats(), staffApi.getStockAlerts()])
+    Promise.all([backofficeApi.getDashboardStats(), backofficeApi.getStockAlerts()])
       .then(([s, a]) => {
         setStats(s);
         setAlerts(a);

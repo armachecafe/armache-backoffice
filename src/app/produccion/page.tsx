@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { staffApi, type ProductionOrder } from '@/lib/api';
+import { backofficeApi, type ProductionOrder } from '@/lib/api';
 import { CloseOrderForm } from '@/components/mes/close-order-form';
 
 export default function ProduccionPage() {
@@ -13,7 +13,7 @@ export default function ProduccionPage() {
 
   function fetchOrders() {
     setLoading(true);
-    staffApi.listProductionOrders({ status: 'IN_PROGRESS' })
+    backofficeApi.listProductionOrders({ status: 'IN_PROGRESS' })
       .then(setInProgress)
       .catch(() => {})
       .finally(() => setLoading(false));

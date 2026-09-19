@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { Package, MapPin, Truck, MessageSquare } from 'lucide-react';
-import type { AdminOrderDetail, OrderStatus } from '@/lib/api';
-import { staffApi } from '@/lib/api';
+import type { BackofficeOrderDetail, OrderStatus } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 import { StateTransitionButton } from '@/components/orders/state-transition-button';
 import { usePermissions } from '@/contexts/permissions-context';
 
 interface OrderDetailAdminProps {
-  order: AdminOrderDetail;
+  order: BackofficeOrderDetail;
   onUpdate: () => void;
 }
 
@@ -23,7 +23,7 @@ export function OrderDetailAdmin({ order, onUpdate }: OrderDetailAdminProps) {
     if (!noteText.trim()) return;
     setAddingNote(true);
     try {
-      await staffApi.addOrderNote(order.orderId, noteText.trim());
+      await backofficeApi.addOrderNote(order.orderId, noteText.trim());
       setNoteText('');
       onUpdate();
     } finally {

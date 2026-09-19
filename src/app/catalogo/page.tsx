@@ -3,16 +3,16 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Eye, EyeOff, Pencil } from 'lucide-react';
-import { staffApi, type AdminProduct } from '@/lib/api';
+import { backofficeApi, type BackofficeProduct } from '@/lib/api';
 
 export default function CatalogoAdminPage() {
-  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [products, setProducts] = useState<BackofficeProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   function fetchProducts(searchTerm?: string) {
     setLoading(true);
-    staffApi.listProducts({ search: searchTerm || undefined, pageSize: 50 })
+    backofficeApi.listProducts({ search: searchTerm || undefined, pageSize: 50 })
       .then((r) => setProducts(r.items))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
@@ -22,7 +22,7 @@ export default function CatalogoAdminPage() {
 
   async function handleUnpublish(productId: string) {
     if (!confirm('¿Despublicar este producto? Ya no será visible en la tienda.')) return;
-    await staffApi.unpublishProduct(productId);
+    await backofficeApi.unpublishProduct(productId);
     fetchProducts(search);
   }
 

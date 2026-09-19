@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { staffApi } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 import { RotateCcw } from 'lucide-react';
 
 export default function DevolucionesPage() {
@@ -37,7 +37,7 @@ export default function DevolucionesPage() {
       const returnItems = items
         .filter((i) => i.sku && Number(i.quantity) > 0)
         .map((i) => ({ sku: i.sku, quantity: Number(i.quantity), reason: i.reason }));
-      const result = await staffApi.createReturn(orderId, returnItems);
+      const result = await backofficeApi.createReturn(orderId, returnItems);
       setSuccess(`Devolución registrada: ${result.returnId}`);
       setOrderId('');
       setItems([{ sku: '', quantity: '', reason: 'error_envio' }]);

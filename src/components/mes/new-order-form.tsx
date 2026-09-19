@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { staffApi } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 
 interface NewOrderFormProps {
   onSuccess: () => void;
@@ -27,7 +27,7 @@ export function NewOrderForm({ onSuccess }: NewOrderFormProps) {
     setSubmitting(true);
     setError('');
     try {
-      await staffApi.createProductionOrder({
+      await backofficeApi.createProductionOrder({
         process,
         inputSku,
         inputLotCode,

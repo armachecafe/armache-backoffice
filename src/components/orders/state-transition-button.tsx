@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { OrderStatus } from '@/lib/api';
-import { staffApi } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 import { usePermissions } from '@/contexts/permissions-context';
 
 interface StateTransitionButtonProps {
@@ -31,7 +31,7 @@ export function StateTransitionButton({ orderId, currentStatus, onTransition }: 
     setLoading(true);
     try {
       const data = currentStatus === 'PREPARING' ? { trackingNumber, courierName } : undefined;
-      await staffApi.transitionOrder(orderId, transition.next, data);
+      await backofficeApi.transitionOrder(orderId, transition.next, data);
       onTransition(transition.next);
     } catch {
       // Error handling silenced for MVP

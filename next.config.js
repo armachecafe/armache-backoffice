@@ -11,11 +11,19 @@ const nextConfig = {
   trailingSlash: true,
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://api.armachecafe.com',
-    // Staff pool (armache-staff = us-east-1_FRAnOWoc1) — NOT the customers/store pool (us-east-1_jw3PdJZAN).
-    // Client 'staff-internal' belongs to the staff pool. The old '2g55...' was 'backoffice-operator'
-    // on the STORE pool (cross-wiring that let staff creds work in the store but not the backoffice).
-    NEXT_PUBLIC_STAFF_POOL_ID: process.env.NEXT_PUBLIC_STAFF_POOL_ID || 'us-east-1_FRAnOWoc1',
-    NEXT_PUBLIC_STAFF_CLIENT_ID: process.env.NEXT_PUBLIC_STAFF_CLIENT_ID || '7m807gp232a2uf4lps6c9kubom',
+    // Backoffice pool (armache-staff = us-east-1_FRAnOWoc1) — NOT the customers/store pool (us-east-1_jw3PdJZAN).
+    // Client 'staff-internal' belongs to the backoffice pool. AWS names retain the staff
+    // vocabulary intentionally (alias-preserved) to avoid Cognito replacement.
+    // TRANSITIONAL fallback (removed in P5): the deploy env may still export
+    // NEXT_PUBLIC_STAFF_* until it is updated. Values are identical either way.
+    NEXT_PUBLIC_BACKOFFICE_POOL_ID:
+      process.env.NEXT_PUBLIC_BACKOFFICE_POOL_ID
+      || process.env.NEXT_PUBLIC_STAFF_POOL_ID
+      || 'us-east-1_FRAnOWoc1',
+    NEXT_PUBLIC_BACKOFFICE_CLIENT_ID:
+      process.env.NEXT_PUBLIC_BACKOFFICE_CLIENT_ID
+      || process.env.NEXT_PUBLIC_STAFF_CLIENT_ID
+      || '7m807gp232a2uf4lps6c9kubom',
   },
 };
 

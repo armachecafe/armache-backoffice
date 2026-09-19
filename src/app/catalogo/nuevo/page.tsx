@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { staffApi } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 
 export default function NuevoProductoPage() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function NuevoProductoPage() {
     setSubmitting(true);
     setError('');
     try {
-      const result = await staffApi.createProduct({
+      const result = await backofficeApi.createProduct({
         name,
         slug,
         description: description || undefined,

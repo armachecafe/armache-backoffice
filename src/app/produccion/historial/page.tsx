@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { staffApi, type ProductionOrder } from '@/lib/api';
+import { backofficeApi, type ProductionOrder } from '@/lib/api';
 import { ProductionHistoryTable } from '@/components/mes/production-history-table';
 
 export default function HistorialPage() {
@@ -11,7 +11,7 @@ export default function HistorialPage() {
 
   useEffect(() => {
     setLoading(true);
-    staffApi.getProductionHistory({ process: processFilter || undefined, pageSize: 50 })
+    backofficeApi.getProductionHistory({ process: processFilter || undefined, pageSize: 50 })
       .then((result) => setOrders(result.items))
       .catch(() => setOrders([]))
       .finally(() => setLoading(false));

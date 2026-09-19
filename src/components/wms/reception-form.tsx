@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { staffApi, type PurchaseOrder } from '@/lib/api';
+import { backofficeApi, type PurchaseOrder } from '@/lib/api';
 
 interface ReceptionFormProps {
   onSuccess: () => void;
@@ -16,7 +16,7 @@ export function ReceptionForm({ onSuccess }: ReceptionFormProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    staffApi.listPurchaseOrders().then(setPurchaseOrders).catch(() => {});
+    backofficeApi.listPurchaseOrders().then(setPurchaseOrders).catch(() => {});
   }, []);
 
   function handlePoSelect(poId: string) {
@@ -36,7 +36,7 @@ export function ReceptionForm({ onSuccess }: ReceptionFormProps) {
       const receptionLines = lines
         .filter((l) => Number(l.inputQty) > 0)
         .map((l) => ({ sku: l.sku, receivedQty: Number(l.inputQty) }));
-      await staffApi.createReception(selectedPoId, receptionLines, note || undefined);
+      await backofficeApi.createReception(selectedPoId, receptionLines, note || undefined);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar recepción');

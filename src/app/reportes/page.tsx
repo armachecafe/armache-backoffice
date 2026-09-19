@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { staffApi, type StockReportRow, type SalesReport, type ProductionReport } from '@/lib/api';
+import { backofficeApi, type StockReportRow, type SalesReport, type ProductionReport } from '@/lib/api';
 import { BarChart3, Package, Factory, Download } from 'lucide-react';
 
 type ReportTab = 'stock' | 'sales' | 'production';
@@ -23,11 +23,11 @@ export default function ReportesPage() {
     setLoading(true);
     try {
       if (tab === 'stock') {
-        setStockData(await staffApi.getStockReport());
+        setStockData(await backofficeApi.getStockReport());
       } else if (tab === 'sales') {
-        setSalesData(await staffApi.getSalesReport({ dateFrom, dateTo }));
+        setSalesData(await backofficeApi.getSalesReport({ dateFrom, dateTo }));
       } else {
-        setProductionData(await staffApi.getProductionReport({ dateFrom, dateTo }));
+        setProductionData(await backofficeApi.getProductionReport({ dateFrom, dateTo }));
       }
     } catch { /* silenced */ }
     finally { setLoading(false); }

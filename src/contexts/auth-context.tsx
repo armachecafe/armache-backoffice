@@ -1,10 +1,10 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { signIn as cognitoSignIn, signOut as cognitoSignOut, getCurrentStaffUser, type StaffUser } from '@/lib/auth';
+import { signIn as cognitoSignIn, signOut as cognitoSignOut, getCurrentBackofficeUser, type BackofficeUser } from '@/lib/auth';
 
 interface AuthContextValue {
-  user: StaffUser | null;
+  user: BackofficeUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -14,11 +14,11 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<StaffUser | null>(null);
+  const [user, setUser] = useState<BackofficeUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getCurrentStaffUser()
+    getCurrentBackofficeUser()
       .then((u) => setUser(u))
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { staffApi, type StockAlert } from '@/lib/api';
+import { backofficeApi, type StockAlert } from '@/lib/api';
 import { StockAlertCard } from '@/components/wms/stock-alert-card';
 
 export default function AlertasPage() {
@@ -9,7 +9,7 @@ export default function AlertasPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    staffApi.getStockAlerts()
+    backofficeApi.getStockAlerts()
       .then(setAlerts)
       .catch(() => {})
       .finally(() => setLoading(false));

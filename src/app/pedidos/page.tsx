@@ -1,17 +1,17 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { staffApi, type AdminOrderSummary } from '@/lib/api';
+import { backofficeApi, type BackofficeOrderSummary } from '@/lib/api';
 import { OrderTable } from '@/components/orders/order-table';
 
 export default function PedidosPage() {
-  const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
+  const [orders, setOrders] = useState<BackofficeOrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = useCallback(async (filters?: { status?: string; search?: string }) => {
     setLoading(true);
     try {
-      const result = await staffApi.listOrders({ ...filters, pageSize: 50 });
+      const result = await backofficeApi.listOrders({ ...filters, pageSize: 50 });
       setOrders(result.items);
     } catch {
       setOrders([]);

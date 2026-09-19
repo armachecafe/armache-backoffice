@@ -4,21 +4,21 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { staffApi, type AdminOrderDetail } from '@/lib/api';
+import { backofficeApi, type BackofficeOrderDetail } from '@/lib/api';
 import { OrderDetailAdmin } from '@/components/orders/order-detail-admin';
 
 export function OrderDetailClient() {
   const searchParams = useSearchParams();
   // orderId comes from the query string (?id=...), read at runtime — reliable in static export.
   const orderId = searchParams.get('id') ?? '';
-  const [order, setOrder] = useState<AdminOrderDetail | null>(null);
+  const [order, setOrder] = useState<BackofficeOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchOrder = useCallback(async () => {
     if (!orderId) return;
     setLoading(true);
     try {
-      const data = await staffApi.getOrder(orderId);
+      const data = await backofficeApi.getOrder(orderId);
       setOrder(data);
     } catch {
       setOrder(null);

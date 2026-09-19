@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import type { AdminOrderSummary, OrderStatus } from '@/lib/api';
+import type { BackofficeOrderSummary, OrderStatus } from '@/lib/api';
 
 interface OrderTableProps {
-  orders: AdminOrderSummary[];
+  orders: BackofficeOrderSummary[];
   onFilterChange: (filters: { status?: string; search?: string }) => void;
 }
 

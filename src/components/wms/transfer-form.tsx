@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { staffApi } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 
 const LOCATIONS = [
   { id: 'planta', name: 'Planta de Producción' },
@@ -35,7 +35,7 @@ export function TransferForm({ onSuccess }: TransferFormProps) {
     setSubmitting(true);
     setError('');
     try {
-      await staffApi.createTransfer({
+      await backofficeApi.createTransfer({
         fromLocation,
         toLocation,
         items: items.filter((i) => i.sku && Number(i.quantity) > 0).map((i) => ({

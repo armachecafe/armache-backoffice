@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { staffApi } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 
 export default function PedidoB2BPage() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function PedidoB2BPage() {
     setSubmitting(true);
     setError('');
     try {
-      await staffApi.createB2BOrder({
+      await backofficeApi.createB2BOrder({
         clientName,
         clientCompany,
         clientContact: { name: contactName || clientName, email: contactEmail, phone: contactPhone },

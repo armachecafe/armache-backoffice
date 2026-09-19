@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { staffApi } from '@/lib/api';
+import { backofficeApi } from '@/lib/api';
 
 interface PermissionsContextValue {
   role: string;
@@ -29,7 +29,7 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
     }
 
     setIsLoading(true);
-    staffApi
+    backofficeApi
       .getMyPermissions()
       .then((data) => {
         setRole(data.role);

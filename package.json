@@ -19,7 +19,7 @@
     "tailwind-merge": "2.4.0",
     "lucide-react": "0.408.0",
     "amazon-cognito-identity-js": "6.3.12",
-    "@armache/openapi-client": "workspace:*"
+    "@armache/openapi-client": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "20.14.10",

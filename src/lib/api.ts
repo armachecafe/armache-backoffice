@@ -1,47 +1,84 @@
 /**
  * Backoffice API client — all calls authenticated via Backoffice Pool token.
+ *
+ * CONTRACT-FIRST: openapi/admin.yaml (via @armache/openapi-client/admin) is the
+ * SINGLE SOURCE OF TRUTH for /backoffice/* request and response shapes. This
+ * module imports the generated components['schemas'] as `ContractSchemas` and
+ * maps them to the backoffice's UI-facing types in ONE place, so no UI component
+ * changes when the wire changes.
  */
 import { getIdToken } from '@/lib/auth';
+import type { components } from '@armache/openapi-client/admin';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.armachecafe.com';
 
-async function fetchBackofficeApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = await getIdToken();
-  if (!token) throw new Error('No backoffice session');
+// ---------------------------------------------------------------------------
+// Contract types (backend truth, generated from openapi/admin.yaml)
+// ---------------------------------------------------------------------------
+type ContractSchemas = components['schemas'];
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options?.headers,
-    },
-    cache: 'no-store',
-  });
+// ---------------------------------------------------------------------------
+// Direct re-exports — contract shape already equals the UI shape
+// ---------------------------------------------------------------------------
+export type BackofficePermissions = ContractSchemas['BackofficePermissions'];
+export type DashboardStats = ContractSchemas['BackofficeDashboardStats'];
+export type ProductionOrder = ContractSchemas['ProductionOrder'];
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`API error: ${res.status} ${res.statusText} ${body}`);
-  }
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
-}
+// ---------------------------------------------------------------------------
+// UI-facing types DERIVED from the contract (never independently declared)
+// ---------------------------------------------------------------------------
 
-// --- Types ---
-
-export type OrderStatus = 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
-
-export interface BackofficeOrderSummary {
-  orderId: string;
-  orderCode: string;
+export type BackofficeOrderSummary = Omit<ContractSchemas['BackofficeOrderSummary'], 'status'> & {
   status: OrderStatus;
-  totalCents: number;
-  itemCount: number;
   customerName?: string;
   customerEmail?: string;
   type: 'B2C' | 'B2B';
+};
+
+export type StockAlert = ContractSchemas['StockAlert'] & {
+  locationId: string;
+  locationName: string;
   createdAt: string;
+};
+
+// Presign grant — three-way naming divergence (wire `headers`, UI `signedHeaders`,
+// legacy alias `requiredHeaders`). The ONLY place this rename exists.
+type ContractUploadGrant = ContractSchemas['BackofficeProductImageUploadGrant'];
+
+/**
+ * DEPRECATED alias tolerance. No backend under services/ emits `requiredHeaders`
+ * (verified at design time). Kept as a defensive runtime read for a hypothetical
+ * older deployed catalog-backoffice-images Lambda. Delete this widening — and the
+ * `??` below — once the deployed Lambda version is confirmed to emit `headers`.
+ */
+type WireUploadGrant = Omit<ContractUploadGrant, 'headers'> & {
+  headers?: Record<string, string>;
+  requiredHeaders?: Record<string, string>;
+};
+
+/**
+ * UI-facing grant. `signedHeaders` is the UI name for the wire's `headers`;
+ * ~UI call sites are unchanged by this migration.
+ */
+export interface ProductImageUploadGrant extends ContractUploadGrant {
+  signedHeaders: Record<string, string>;
 }
+
+/** Wire -> UI. The ONLY place the headers/signedHeaders rename exists. */
+export function normalizeUploadGrant(wire: WireUploadGrant): ProductImageUploadGrant {
+  const signedHeaders = wire.requiredHeaders ?? wire.headers;
+  if (!signedHeaders || Object.keys(signedHeaders).length === 0) {
+    throw new Error('La autorización de carga no incluyó los headers requeridos');
+  }
+  return { ...wire, signedHeaders } as ProductImageUploadGrant;
+}
+
+// ---------------------------------------------------------------------------
+// Hand-written UI types (contract shape diverges — kept unchanged so consumers
+// do not break; migrate field-by-field once the backend aligns).
+// ---------------------------------------------------------------------------
+
+export type OrderStatus = 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
 
 export interface BackofficeOrderDetail {
   orderId: string;
@@ -58,24 +95,6 @@ export interface BackofficeOrderDetail {
   paymentMethod?: string;
   trackingNumber?: string;
   courierName?: string;
-  createdAt: string;
-}
-
-export interface DashboardStats {
-  todaySalesCents: number;
-  todayOrderCount: number;
-  ordersByStatus: Record<string, number>;
-  todayProductionKg: number;
-  todayWasteKg: number;
-}
-
-export interface StockAlert {
-  sku: string;
-  productName: string;
-  locationId: string;
-  locationName: string;
-  currentStock: number;
-  threshold: number;
   createdAt: string;
 }
 
@@ -97,28 +116,6 @@ export interface Transfer {
   createdAt: string;
 }
 
-export interface ProductionOrder {
-  orderId: string;
-  process: 'ROASTING' | 'GRINDING' | 'PACKAGING';
-  status: 'IN_PROGRESS' | 'CLOSED' | 'CANCELLED';
-  inputSku: string;
-  inputLotCode: string;
-  inputQtyKg: number;
-  outputQtyKg?: number;
-  wasteKg?: number;
-  outputLotCode?: string;
-  operator: string;
-  startedAt: string;
-  closedAt?: string;
-}
-
-export interface BackofficePermissions {
-  role: string;
-  permissions: string[];
-}
-
-// --- Ronda 2 Types ---
-
 export type BackofficeProductImageStatus = 'CONFIRMING' | 'ACTIVE' | 'DELETING';
 
 export interface BackofficeProductImage {
@@ -130,21 +127,6 @@ export interface BackofficeProductImage {
   sortOrder: number;
   isPrimary: boolean;
   status: BackofficeProductImageStatus;
-}
-
-export interface ProductImageUploadGrant {
-  imageId: string;
-  uploadUrl: string;
-  expiresAt: number | string;
-  signedHeaders: Record<string, string>;
-}
-
-interface ProductImageUploadGrantResponse {
-  imageId: string;
-  uploadUrl: string;
-  expiresAt: number | string;
-  requiredHeaders?: Record<string, string>;
-  headers?: Record<string, string>;
 }
 
 export interface BackofficeProduct {
@@ -225,6 +207,32 @@ export interface LotSearchResult {
   sku: string;
   productName: string;
   createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Fetch helpers
+// ---------------------------------------------------------------------------
+
+async function fetchBackofficeApi<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = await getIdToken();
+  if (!token) throw new Error('No backoffice session');
+
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...options?.headers,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`API error: ${res.status} ${res.statusText} ${body}`);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
 }
 
 // --- API Methods ---
@@ -318,15 +326,11 @@ export const backofficeApi = {
   unpublishProduct: (productId: string) =>
     fetchBackofficeApi<{ success: boolean }>(`/backoffice/catalog/products/${productId}/unpublish`, { method: 'POST' }),
   requestProductImageUpload: async (productId: string, data: { contentType: string; sizeBytes: number }) => {
-    const response = await fetchBackofficeApi<ProductImageUploadGrantResponse>(
+    const wire = await fetchBackofficeApi<WireUploadGrant>(
       `/backoffice/catalog/products/${productId}/images/presign`,
       { method: 'POST', body: JSON.stringify(data) },
     );
-    const signedHeaders = response.requiredHeaders ?? response.headers;
-    if (!signedHeaders || Object.keys(signedHeaders).length === 0) {
-      throw new Error('La autorización de carga no incluyó los headers requeridos');
-    }
-    return { ...response, signedHeaders } satisfies ProductImageUploadGrant;
+    return normalizeUploadGrant(wire);
   },
   confirmProductImage: (productId: string, imageId: string) =>
     fetchBackofficeApi<BackofficeProductImage>(`/backoffice/catalog/products/${productId}/images/confirm`, {

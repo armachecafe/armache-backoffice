@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "next": "14.2.5",
@@ -17,7 +18,8 @@
     "clsx": "2.1.1",
     "tailwind-merge": "2.4.0",
     "lucide-react": "0.408.0",
-    "amazon-cognito-identity-js": "6.3.12"
+    "amazon-cognito-identity-js": "6.3.12",
+    "@armache/openapi-client": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "20.14.10",
@@ -26,6 +28,7 @@
     "autoprefixer": "10.4.19",
     "postcss": "8.4.39",
     "tailwindcss": "3.4.6",
-    "typescript": "5.5.3"
+    "typescript": "5.5.3",
+    "vitest": "2.0.3"
   }
 }

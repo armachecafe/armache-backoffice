@@ -9,10 +9,8 @@ import {
   CognitoUserSession,
 } from 'amazon-cognito-identity-js';
 
-// TRANSITIONAL fallback (removed in P5): the deploy env may still export
-// NEXT_PUBLIC_STAFF_* until it is updated. Values are identical either way.
-const POOL_ID = process.env.NEXT_PUBLIC_BACKOFFICE_POOL_ID || process.env.NEXT_PUBLIC_STAFF_POOL_ID || '';
-const CLIENT_ID = process.env.NEXT_PUBLIC_BACKOFFICE_CLIENT_ID || process.env.NEXT_PUBLIC_STAFF_CLIENT_ID || '';
+const POOL_ID = process.env.NEXT_PUBLIC_BACKOFFICE_POOL_ID || '';
+const CLIENT_ID = process.env.NEXT_PUBLIC_BACKOFFICE_CLIENT_ID || '';
 
 function getUserPool() {
   if (!POOL_ID || !CLIENT_ID) {

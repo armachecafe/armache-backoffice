@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@armachecafe/openapi-client':
-        specifier: ^2.0.0
-        version: 2.0.0(@aws-sdk/client-sso-oidc@3.637.0(@aws-sdk/client-sts@3.637.0))(openapi-fetch@0.13.0)(typescript@5.5.3)
+        specifier: ^2.0.1
+        version: 2.0.1(@aws-sdk/client-sso-oidc@3.637.0(@aws-sdk/client-sts@3.637.0))(openapi-fetch@0.13.8)(typescript@5.5.3)
       amazon-cognito-identity-js:
         specifier: 6.3.12
         version: 6.3.12
@@ -74,8 +74,8 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@armachecafe/openapi-client@2.0.0':
-    resolution: {integrity: sha512-a4gM6RzJg2Kq/WU8DOY4ouSZRaBFsdeJDEiA2lL0JGVE0xP/GUAWGJgLS0Uoj/M3zo6mbnVvbIOb3hATWgh/Dw==, tarball: https://npm.pkg.github.com/download/@armachecafe/openapi-client/2.0.0/c8c7b31e8f444eec71c10294daaddbeafa47eafb}
+  '@armachecafe/openapi-client@2.0.1':
+    resolution: {integrity: sha512-uj+ZP4GhMynhdY4w+FO++l+5I/mVT7nwE87goxC+Us1dnDEX+N5ejdygSDFCSWDDh7M/CnPk2Uj414pB52ChaQ==, tarball: https://npm.pkg.github.com/download/@armachecafe/openapi-client/2.0.1/cdcf5d9be1608498a4149ce95bab4650dab6ff6d}
     hasBin: true
     peerDependencies:
       openapi-fetch: ^0.13.0
@@ -1331,8 +1331,8 @@ packages:
     resolution: {integrity: sha512-1FlR+gjXK7X+AsAHso35MnyN5KqGwJRi/31ft6x0M194ht7S+rWAvd7PHss9xSKMzE0asv1pyIHaJYq+BbacAQ==}
     engines: {node: '>=12'}
 
-  openapi-fetch@0.13.0:
-    resolution: {integrity: sha512-6Nlf/BDbtyHwHdNrLPUiyt4CZMzL3ZyAt55yWH8W7+Z+8aYWnvca4uZHQHXViy8KcnCMqAhLM/bifh2Yjjkf6w==}
+  openapi-fetch@0.13.8:
+    resolution: {integrity: sha512-yJ4QKRyNxE44baQ9mY5+r/kAzZ8yXMemtNAOFwOzRXJscdjSxxzWSNlyBAr+o5JjkUw9Lc3W7OIoca0cY3PYnQ==}
 
   openapi-typescript-helpers@0.0.15:
     resolution: {integrity: sha512-opyTPaunsklCBpTK8JGef6mfPhLSnyy5a0IN9vKtx3+4aExf+KxEqYwIy3hqkedXIB97u357uLMJsOnm3GVjsw==}
@@ -1728,11 +1728,11 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
 
-  '@armachecafe/openapi-client@2.0.0(@aws-sdk/client-sso-oidc@3.637.0(@aws-sdk/client-sts@3.637.0))(openapi-fetch@0.13.0)(typescript@5.5.3)':
+  '@armachecafe/openapi-client@2.0.1(@aws-sdk/client-sso-oidc@3.637.0(@aws-sdk/client-sts@3.637.0))(openapi-fetch@0.13.8)(typescript@5.5.3)':
     dependencies:
       '@aws-sdk/client-s3': 3.637.0
       '@aws-sdk/credential-providers': 3.637.0(@aws-sdk/client-sso-oidc@3.637.0(@aws-sdk/client-sts@3.637.0))
-      openapi-fetch: 0.13.0
+      openapi-fetch: 0.13.8
       openapi-typescript: 7.4.1(typescript@5.5.3)
     transitivePeerDependencies:
       - '@aws-sdk/client-sso-oidc'
@@ -3361,7 +3361,7 @@ snapshots:
     dependencies:
       mimic-fn: 4.0.0
 
-  openapi-fetch@0.13.0:
+  openapi-fetch@0.13.8:
     dependencies:
       openapi-typescript-helpers: 0.0.15
 

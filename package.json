@@ -11,17 +11,18 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@armachecafe/openapi-client": "^1.0.0",
+    "amazon-cognito-identity-js": "6.3.12",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.1",
+    "lucide-react": "0.408.0",
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "class-variance-authority": "0.7.0",
-    "clsx": "2.1.1",
-    "tailwind-merge": "2.4.0",
-    "lucide-react": "0.408.0",
-    "amazon-cognito-identity-js": "6.3.12",
-    "@armachecafe/openapi-client": "^1.0.0"
+    "tailwind-merge": "2.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.45.3",
     "@types/node": "20.14.10",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",

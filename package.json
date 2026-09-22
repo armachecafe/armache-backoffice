@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "sync:contract": "aws s3 cp s3://armache-contracts/admin/latest/spec.yaml /tmp/admin-spec.yaml && npx @armachecafe/openapi-client --spec /tmp/admin-spec.yaml --contract admin --output src/types/api.ts",
+    "sync:contract": "aws s3 cp s3://armache-contracts/admin/latest/spec.yaml /tmp/admin-spec.yaml && ./node_modules/.bin/armache-sync-contract --spec /tmp/admin-spec.yaml --contract admin --output src/types/api.ts",
     "prebuild": "pnpm sync:contract",
     "dev": "next dev --port 3001",
     "build": "next build",

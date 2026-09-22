@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "sync:contract": "npx @armachecafe/openapi-client --contract admin --output src/types/api.ts",
+    "prebuild": "pnpm sync:contract",
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
@@ -11,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@armachecafe/openapi-client": "^1.0.0",
+    "@armachecafe/openapi-client": "^2.0.0",
     "amazon-cognito-identity-js": "6.3.12",
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",

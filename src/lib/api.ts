@@ -8,7 +8,7 @@
  * changes when the wire changes.
  */
 import { getIdToken } from '@/lib/auth';
-import type { components } from '@armachecafe/openapi-client/admin';
+import type { components } from '../types/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.armachecafe.com';
 

@@ -31,4 +31,4 @@ bash scripts/deploy.sh
 
 ## Contract dependency
 
-Types are generated from `@armache/openapi-client` (published from the backend repo).
+Types are generated from `@armachecafe/openapi-client` (published from the backend repo).

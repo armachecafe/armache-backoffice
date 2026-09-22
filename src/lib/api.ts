@@ -1,14 +1,14 @@
 /**
  * Backoffice API client — all calls authenticated via Backoffice Pool token.
  *
- * CONTRACT-FIRST: openapi/admin.yaml (via @armache/openapi-client/admin) is the
+ * CONTRACT-FIRST: openapi/admin.yaml (via @armachecafe/openapi-client/admin) is the
  * SINGLE SOURCE OF TRUTH for /backoffice/* request and response shapes. This
  * module imports the generated components['schemas'] as `ContractSchemas` and
  * maps them to the backoffice's UI-facing types in ONE place, so no UI component
  * changes when the wire changes.
  */
 import { getIdToken } from '@/lib/auth';
-import type { components } from '@armache/openapi-client/admin';
+import type { components } from '@armachecafe/openapi-client/admin';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.armachecafe.com';
 

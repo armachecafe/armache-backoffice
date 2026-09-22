@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@armachecafe/openapi-client": "^2.0.2",
+    "@armachecafe/openapi-client": "^2.1.0",
     "amazon-cognito-identity-js": "6.3.12",
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",

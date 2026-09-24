@@ -27,6 +27,8 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
           registry-url: 'https://npm.pkg.github.com'
+      - name: Auth to GitHub Packages (user-level, materialized token)
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
       - name: Install
         run: pnpm install --frozen-lockfile
         env:

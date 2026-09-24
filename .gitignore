@@ -13,3 +13,5 @@ playwright/.cache/
 src/types/api.ts
 src/types/client.ts
 .contract-lock.json
+# Local Pi runtime state
+.atl/

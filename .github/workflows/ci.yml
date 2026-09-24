@@ -33,6 +33,17 @@ jobs:
         run: pnpm install --frozen-lockfile
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Contract sync gate: without AWS credentials S3://armache-contracts is unreachable
+      # and prebuild (pnpm sync:contract) would fail the build. The guard checks
+      # `aws sts get-caller-identity` (never prints secrets); if unavailable it creates
+      # a minimal src/types/api.ts stub (Record<string,any>) so typecheck/build pass.
+      # Real sync (s3://armache-contracts/admin/latest/spec.yaml) runs when credentials
+      # exist. Guard also runs as `prebuild` so `pnpm build` is always safe. Never
+      # commits generated types (src/types/api.ts is gitignored).
+      # MUST run before Typecheck/Test: src/lib/api.ts imports ../types/api, so without
+      # it tsc fails with TS2307 and cascading TS2339 on contract-derived types.
+      - name: Guard contract types (CI without AWS)
+        run: bash scripts/ci-contract-guard.sh
       # Lint: repo has no eslint config (next lint would prompt/interactive-fail).
       # Keep `pnpm lint` running but tolerate missing config with a warning so CI
       # stays green until a real config is added. No secrets involved.
@@ -46,15 +57,6 @@ jobs:
       # runs the real unit test (src/lib/api.test.ts) without editing vitest.config.ts.
       - name: Test
         run: pnpm test
-      # Contract sync gate: without AWS credentials S3://armache-contracts is unreachable
-      # and prebuild (pnpm sync:contract) would fail the build. The guard checks
-      # `aws sts get-caller-identity` (never prints secrets); if unavailable it creates
-      # a minimal src/types/api.ts stub (Record<string,any>) so typecheck/build pass.
-      # Real sync (s3://armache-contracts/admin/latest/spec.yaml) runs when credentials
-      # exist. Guard also runs as `prebuild` so `pnpm build` is always safe. Never
-      # commits generated types (src/types/api.ts is gitignored).
-      - name: Guard contract types (CI without AWS)
-        run: bash scripts/ci-contract-guard.sh
       - name: Build
         run: pnpm build
       # Playwright prod-smoke targets https://admin.armachecafe.com and needs

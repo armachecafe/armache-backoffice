@@ -2,7 +2,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]]
+    branches: [main]
 # GITHUB_TOKEN needs packages:read to fetch @armachecafe/openapi-client
 # from GitHub Packages; without it pnpm fails with
 # ERR_PNPM_TARBALL_URL_MISMATCH on fresh installs.

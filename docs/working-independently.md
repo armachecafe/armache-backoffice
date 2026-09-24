@@ -21,13 +21,13 @@ Stack: **Next.js 14.2.5 + React 18 + Tailwind 3 + pnpm**, static export
 | Node.js | 22 (`node --version`) |
 | pnpm | 11 (`pnpm --version`) |
 | AWS CLI | v2, with the SSO profile configured in `~/.aws/config` (`481084557193_AdministratorAccess`) |
-| Git over SSH | `git@github.com:carmanuelz/armache-backoffice.git` — push/pull needs no extra auth |
+| Git over SSH | `git@github.com:armachecafe/armache-backoffice.git` — push/pull needs no extra auth |
 | `gh` CLI (optional) | Logged in; handy for generating `GITHUB_TOKEN` (see below) |
 
 ## 2. First-time setup
 
 ```bash
-git clone git@github.com:carmanuelz/armache-backoffice.git
+git clone git@github.com:armachecafe/armache-backoffice.git
 cd armache-backoffice
 cp .env.example .env.local   # then fill in values, see section 3
 ```

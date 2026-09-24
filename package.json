@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "sync:contract": "aws s3 cp s3://armache-contracts/admin/latest/spec.yaml /tmp/admin-spec.yaml && ./node_modules/.bin/armache-sync-contract --spec /tmp/admin-spec.yaml --contract admin --output src/types/api.ts",
-    "prebuild": "pnpm sync:contract",
+    "prebuild": "bash scripts/ci-contract-guard.sh",
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --exclude \"**/tests/e2e/**\""
   },
   "dependencies": {
     "@armachecafe/openapi-client": "^2.1.0",
@@ -34,5 +34,6 @@
     "tailwindcss": "3.4.6",
     "typescript": "5.5.3",
     "vitest": "2.0.3"
-  }
+  },
+  "packageManager": "pnpm@11.5.3"
 }

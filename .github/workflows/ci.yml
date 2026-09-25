@@ -68,6 +68,9 @@ jobs:
             echo "::notice::Playwright skipped — STAFF_EMAIL/STAFF_PASSWORD not set (prod-smoke requires secrets)"
             exit 0
           fi
+          # Browsers are not preinstalled on the runner; install only when the
+          # suite will actually run so the skip path stays fast.
+          pnpm exec playwright install --with-deps chromium
           pnpm exec playwright test --config=playwright.backoffice.config.ts
         env:
           STAFF_EMAIL: ${{ secrets.STAFF_EMAIL }}

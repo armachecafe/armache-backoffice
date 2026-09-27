@@ -15,3 +15,5 @@ src/types/client.ts
 .contract-lock.json
 # Local Pi runtime state
 .atl/
+# Local ODD task documents (agent state, like .atl/)
+odd/

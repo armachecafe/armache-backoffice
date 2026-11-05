@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
   { href: '/almacen/transferencias', label: 'Transferencias', icon: Warehouse, permission: 'wms:transfer:create' },
   { href: '/almacen/alertas', label: 'Alertas Stock', icon: Warehouse, permission: 'wms:alert:view' },
   { href: '/almacen/devoluciones', label: 'Devoluciones', icon: RotateCcw, permission: 'wms:return:create' },
-  { href: '/finca/cosechas', label: 'Cosechas', icon: Wheat, group: 'Finca' },
+  { href: '/finca/cosechas', label: 'Cosechas', icon: Wheat, group: 'Finca', permission: 'wms:harvest:read' },
   { href: '/produccion', label: 'Producción', icon: Factory, permission: 'mes:order:create' },
   { href: '/produccion/historial', label: 'Historial MES', icon: Factory, permission: 'mes:order:view' },
   { href: '/trazabilidad', label: 'Trazabilidad', icon: Search, permission: 'traceability:lot:view' },

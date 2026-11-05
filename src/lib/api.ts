@@ -24,6 +24,12 @@ export type BackofficePermissions = ContractSchemas['BackofficePermissions'];
 export type DashboardStats = ContractSchemas['BackofficeDashboardStats'];
 export type ProductionOrder = ContractSchemas['ProductionOrder'];
 
+// --- T5d: lot split/merge (admin@1.1.0) — request/response shapes used as-is ---
+export type SplitLotRequest = ContractSchemas['SplitLotRequest'];
+export type SplitLotResult = ContractSchemas['SplitLotResult'];
+export type MergeLotsRequest = ContractSchemas['MergeLotsRequest'];
+export type MergeLotsResult = ContractSchemas['MergeLotsResult'];
+
 // ---------------------------------------------------------------------------
 // UI-facing types DERIVED from the contract (never independently declared)
 // ---------------------------------------------------------------------------
@@ -281,6 +287,21 @@ export const backofficeApi = {
     }),
   confirmTransfer: (transferId: string) =>
     fetchBackofficeApi<{ success: boolean }>(`/backoffice/wms/transfers/${transferId}/confirm`, { method: 'POST' }),
+
+  // --- T5d: lot split/merge (admin@1.1.0). Backend responds 201 with the
+  // result object directly (no envelope): split -> {success, childLotIds, childLotCodes},
+  // merge -> {success, outputLotId, outputLotCode}. Errors surface as API errors
+  // with {code} bodies (VALIDATION_ERROR, NOT_FOUND, CONFLICT, INTERNAL_ERROR).
+  splitLot: (data: SplitLotRequest) =>
+    fetchBackofficeApi<SplitLotResult>('/backoffice/wms/lots/split', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  mergeLots: (data: MergeLotsRequest) =>
+    fetchBackofficeApi<MergeLotsResult>('/backoffice/wms/lots/merge', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   // MES
   listProductionOrders: (params?: { status?: string; process?: string }) => {

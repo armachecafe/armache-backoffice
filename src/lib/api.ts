@@ -48,6 +48,11 @@ export type CreatePackagedLotRequest = ContractSchemas['CreatePackagedLotRequest
 export type CountLine = ContractSchemas['CountLine'];
 export type CountRequest = ContractSchemas['CountRequest'];
 export type CountResult = ContractSchemas['CountResult'];
+export type InventoryTransfer = ContractSchemas['InventoryTransfer'];
+export type InventoryTransferStatus = ContractSchemas['InventoryTransferStatus'];
+export type CreateInventoryTransferRequest = ContractSchemas['CreateInventoryTransferRequest'];
+export type ShipRequest = ContractSchemas['ShipRequest'];
+export type ReceiveRequest = ContractSchemas['ReceiveRequest'];
 
 // ---------------------------------------------------------------------------
 // UI-facing types DERIVED from the contract (never independently declared)
@@ -365,6 +370,33 @@ export const backofficeApi = {
     fetchBackofficeApi<PackagedLot>('/backoffice/inventory/lots', { method: 'POST', body: JSON.stringify(data) }),
   createCount: (data: CountRequest) =>
     fetchBackofficeApi<CountResult>('/backoffice/inventory/counts', { method: 'POST', body: JSON.stringify(data) }),
+
+  // --- Outflow O1: inventory transfers with lots (admin@1.3.0). The old WMS
+  // transfer methods below are untouched (compatibility until migration).
+  listInventoryTransfers: (params?: { fromLocationId?: string; toLocationId?: string; status?: string; forOrderId?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.fromLocationId) qs.set('fromLocationId', params.fromLocationId);
+    if (params?.toLocationId) qs.set('toLocationId', params.toLocationId);
+    if (params?.status) qs.set('status', params.status);
+    if (params?.forOrderId) qs.set('forOrderId', params.forOrderId);
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return fetchBackofficeApi<{ items: InventoryTransfer[] }>(`/backoffice/inventory/transfers${suffix}`).then((r) => r.items);
+  },
+  createInventoryTransfer: (data: CreateInventoryTransferRequest) =>
+    fetchBackofficeApi<InventoryTransfer>('/backoffice/inventory/transfers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  shipInventoryTransfer: (transferId: string, data: ShipRequest) =>
+    fetchBackofficeApi<InventoryTransfer>(`/backoffice/inventory/transfers/${transferId}/ship`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  receiveInventoryTransfer: (transferId: string, data: ReceiveRequest) =>
+    fetchBackofficeApi<InventoryTransfer>(`/backoffice/inventory/transfers/${transferId}/receive`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   // MES
   listProductionOrders: (params?: { status?: string; process?: string }) => {

@@ -324,3 +324,75 @@ describe('backofficeApi inventory core (O1)', () => {
     await expect(backofficeApi.createCount({ countReferenceId: 'cnt-1', locationId: 'l-1', reason: 'x', lines: [], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' })).rejects.toThrow('409');
   });
 });
+
+describe('backofficeApi inventory transfers (O1)', () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('listInventoryTransfers sends the filters in the query string and unwraps items', async () => {
+    const transfers = [{ transferId: 't-1', status: 'IN_TRANSIT', fromLocationId: 'l-1', toLocationId: 'l-2', lines: [] }];
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: transfers }) });
+
+    await expect(
+      backofficeApi.listInventoryTransfers({ fromLocationId: 'l-1', toLocationId: 'l-2', status: 'IN_TRANSIT', forOrderId: 'o-1' }),
+    ).resolves.toEqual(transfers);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/backoffice/inventory/transfers?');
+    expect(url).toContain('fromLocationId=l-1');
+    expect(url).toContain('toLocationId=l-2');
+    expect(url).toContain('status=IN_TRANSIT');
+    expect(url).toContain('forOrderId=o-1');
+  });
+
+  it('createInventoryTransfer POSTs the request and returns the transfer', async () => {
+    const input = { transferReferenceId: 'tr-1', fromLocationId: 'l-1', toLocationId: 'l-2', lines: [{ sku: 'SKU-1', quantity: 5, lots: [{ lotCode: 'LOT-A', shipped: 5 }] }], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const transfer = { transferId: 't-1', status: 'IN_TRANSIT', fromLocationId: 'l-1', toLocationId: 'l-2', lines: input.lines };
+    fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => transfer });
+
+    await expect(backofficeApi.createInventoryTransfer(input)).resolves.toEqual(transfer);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/transfers'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('shipInventoryTransfer POSTs the scans to the ship endpoint', async () => {
+    const input = { shipReferenceId: 'sh-1', scans: ['LOT-A', 'LOT-B'], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const transfer = { transferId: 't-1', status: 'IN_TRANSIT', fromLocationId: 'l-1', toLocationId: 'l-2', lines: [] };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => transfer });
+
+    await expect(backofficeApi.shipInventoryTransfer('t-1', input)).resolves.toEqual(transfer);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/transfers/t-1/ship'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('receiveInventoryTransfer POSTs the received lines to the receive endpoint', async () => {
+    const input = { receiveReferenceId: 'rc-1', lines: [{ lotCode: 'LOT-A', receivedQuantity: 5 }], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const transfer = { transferId: 't-1', status: 'RECEIVED', fromLocationId: 'l-1', toLocationId: 'l-2', lines: [] };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => transfer });
+
+    await expect(backofficeApi.receiveInventoryTransfer('t-1', input)).resolves.toEqual(transfer);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/transfers/t-1/receive'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('receiveInventoryTransfer rejects with the status on conflict', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 409, statusText: 'Conflict', text: async () => '{"code":"CONFLICT"}' });
+
+    await expect(
+      backofficeApi.receiveInventoryTransfer('t-1', { receiveReferenceId: 'rc-1', lines: [], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' }),
+    ).rejects.toThrow('409');
+  });
+});

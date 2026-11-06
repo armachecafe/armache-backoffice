@@ -62,7 +62,7 @@ export default function RetiroPage() {
   }
 
   const shortfall = receiveTransfer
-    ? receiveShortfall(receiveLines, receiveTransfer.lines.flatMap((l) => l.lots))
+    ? receiveShortfall(receiveLines, receiveTransfer.lines.flatMap((l: { lots: { lotCode: string; shipped: number }[] }) => l.lots))
     : [];
 
   async function handleReceiveConfirm() {

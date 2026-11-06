@@ -48,8 +48,20 @@ export type CreatePackagedLotRequest = ContractSchemas['CreatePackagedLotRequest
 export type CountLine = ContractSchemas['CountLine'];
 export type CountRequest = ContractSchemas['CountRequest'];
 export type CountResult = ContractSchemas['CountResult'];
-export type InventoryTransfer = ContractSchemas['InventoryTransfer'];
-export type InventoryTransferStatus = ContractSchemas['InventoryTransferStatus'];
+
+// --- Outflow O2: fulfillment (admin@1.4.0) — request/response shapes used as-is ---
+export type FulfillmentOption = ContractSchemas['FulfillmentOption'];
+export type FulfillmentOptionLine = ContractSchemas['FulfillmentOptionLine'];
+export type FulfillmentOptions = ContractSchemas['FulfillmentOptions'];
+export type OrderFulfillment = ContractSchemas['OrderFulfillment'];
+export type PickScan = ContractSchemas['PickScan'];
+export type AssignOrderInput = ContractSchemas['AssignOrderInput'];
+export type AssignOrderResult = ContractSchemas['AssignOrderResult'];
+export type PickOrderInput = ContractSchemas['PickOrderInput'];
+export type PickOrderResult = ContractSchemas['PickOrderResult'];
+export type UnpickOrderInput = ContractSchemas['UnpickOrderInput'];
+export type SendToPickupStoreInput = ContractSchemas['SendToPickupStoreInput'];
+export type SendToPickupStoreResult = ContractSchemas['SendToPickupStoreResult'];export type InventoryTransfer = ContractSchemas['InventoryTransfer'];export type InventoryTransferStatus = ContractSchemas['InventoryTransferStatus'];
 export type CreateInventoryTransferRequest = ContractSchemas['CreateInventoryTransferRequest'];
 export type ShipRequest = ContractSchemas['ShipRequest'];
 export type ReceiveRequest = ContractSchemas['ReceiveRequest'];
@@ -275,12 +287,15 @@ export const backofficeApi = {
   getDashboardStats: () => fetchBackofficeApi<DashboardStats>('/backoffice/dashboard/stats'),
 
   // Orders
-  listOrders: (params?: { status?: string; search?: string; pageSize?: number; cursor?: string }) => {
+  listOrders: (params?: { status?: string; search?: string; pageSize?: number; cursor?: string; assigned?: boolean; fulfillmentLocationId?: string; pickupLocationId?: string }) => {
     const qs = new URLSearchParams();
     if (params?.status) qs.set('status', params.status);
     if (params?.search) qs.set('search', params.search);
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
     if (params?.cursor) qs.set('cursor', params.cursor);
+    if (params?.assigned !== undefined) qs.set('assigned', String(params.assigned));
+    if (params?.fulfillmentLocationId) qs.set('fulfillmentLocationId', params.fulfillmentLocationId);
+    if (params?.pickupLocationId) qs.set('pickupLocationId', params.pickupLocationId);
     return fetchBackofficeApi<{ items: BackofficeOrderSummary[]; nextCursor?: string }>(`/backoffice/orders?${qs}`);
   },
   getOrder: (orderId: string) => fetchBackofficeApi<BackofficeOrderDetail>(`/backoffice/orders/${orderId}`),
@@ -394,6 +409,33 @@ export const backofficeApi = {
     }),
   receiveInventoryTransfer: (transferId: string, data: ReceiveRequest) =>
     fetchBackofficeApi<InventoryTransfer>(`/backoffice/inventory/transfers/${transferId}/receive`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // --- Outflow O2: fulfillment (admin@1.4.0). NOTE: BackofficeOrderDetail has no
+  // fulfillment field in the contract (gap flagged to backend); the front does not
+  // invent one. Assignment/pick state for a single order comes from these calls'
+  // results until the contract exposes it.
+  getFulfillmentOptions: (orderId: string) =>
+    fetchBackofficeApi<FulfillmentOptions>(`/backoffice/orders/${orderId}/fulfillment-options`).then((r) => r.options),
+  assignOrder: (orderId: string, data: AssignOrderInput) =>
+    fetchBackofficeApi<AssignOrderResult>(`/backoffice/orders/${orderId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  pickOrder: (orderId: string, data: PickOrderInput) =>
+    fetchBackofficeApi<PickOrderResult>(`/backoffice/orders/${orderId}/pick`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  unpickOrder: (orderId: string, data: UnpickOrderInput) =>
+    fetchBackofficeApi<{ success: boolean }>(`/backoffice/orders/${orderId}/unpick`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  sendOrderToPickupStore: (orderId: string, data: SendToPickupStoreInput) =>
+    fetchBackofficeApi<SendToPickupStoreResult>(`/backoffice/orders/${orderId}/send-to-pickup-store`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),

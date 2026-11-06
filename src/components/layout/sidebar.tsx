@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Warehouse, Factory, ChevronLeft, ChevronRight, ChevronDown, Package, BarChart3, RotateCcw, Search, Sprout, Wheat, Boxes, PackageCheck, ScanLine, Truck, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Warehouse, Factory, ChevronLeft, ChevronRight, ChevronDown, Package, BarChart3, RotateCcw, Search, Sprout, Wheat, Boxes, PackageCheck, ScanLine, Truck, ClipboardList, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 import { usePermissions } from '@/contexts/permissions-context';
 
@@ -40,6 +40,7 @@ const navItems: NavItem[] = [
   { href: '/inventario/traslados', label: 'Traslados', icon: Truck, group: 'Inventario', permission: 'inventory:transfer' },
   { href: '/despacho/asignacion', label: 'Asignación', icon: ClipboardList, group: 'Despacho', permission: 'order:assign' },
   { href: '/despacho/preparacion', label: 'Preparación', icon: PackageCheck, group: 'Despacho', permission: 'order:pick' },
+  { href: '/despacho/retiro', label: 'Retiro en tienda', icon: ShoppingBag, group: 'Despacho', permission: 'order:pick' },
   { href: '/produccion', label: 'Producción', icon: Factory, permission: 'mes:order:create' },
   { href: '/produccion/historial', label: 'Historial MES', icon: Factory, permission: 'mes:order:view' },
   { href: '/trazabilidad', label: 'Trazabilidad', icon: Search, permission: 'traceability:lot:view' },

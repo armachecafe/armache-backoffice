@@ -3,12 +3,15 @@
 import { useState } from 'react';
 import type { OrderStatus } from '@/lib/api';
 import { backofficeApi } from '@/lib/api';
+import { apiErrorMessage } from '@/lib/api-errors';
 import { usePermissions } from '@/contexts/permissions-context';
 
 interface StateTransitionButtonProps {
   orderId: string;
   currentStatus: OrderStatus;
   onTransition: (newStatus: OrderStatus) => void;
+  /** Pickup orders dispatch from Preparación, not here. Defaults to false (shipping). */
+  isPickup?: boolean;
 }
 
 const transitions: Record<string, { next: OrderStatus; label: string; permission: string }> = {
@@ -17,24 +20,27 @@ const transitions: Record<string, { next: OrderStatus; label: string; permission
   DISPATCHED: { next: 'DELIVERED', label: 'Marcar entregado', permission: 'order:transition' },
 };
 
-export function StateTransitionButton({ orderId, currentStatus, onTransition }: StateTransitionButtonProps) {
+export function StateTransitionButton({ orderId, currentStatus, onTransition, isPickup = false }: StateTransitionButtonProps) {
   const { can } = usePermissions();
   const [loading, setLoading] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [courierName, setCourierName] = useState('');
   const [showTracking, setShowTracking] = useState(false);
+  const [error, setError] = useState('');
 
   const transition = transitions[currentStatus];
   if (!transition || !can(transition.permission)) return null;
+  if (isPickup && currentStatus === 'PREPARING') return null;
 
   async function handleTransition() {
     setLoading(true);
+    setError('');
     try {
       const data = currentStatus === 'PREPARING' ? { trackingNumber, courierName } : undefined;
       await backofficeApi.transitionOrder(orderId, transition.next, data);
       onTransition(transition.next);
-    } catch {
-      // Error handling silenced for MVP
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo cambiar el estado'));
     } finally {
       setLoading(false);
       setShowTracking(false);
@@ -82,11 +88,13 @@ export function StateTransitionButton({ orderId, currentStatus, onTransition }: 
         >
           {loading ? 'Procesando...' : 'Confirmar despacho'}
         </button>
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     );
   }
 
   return (
+    <>
     <button
       onClick={handleTransition}
       disabled={loading}
@@ -95,5 +103,7 @@ export function StateTransitionButton({ orderId, currentStatus, onTransition }: 
     >
       {loading ? 'Procesando...' : transition.label}
     </button>
+    {error && currentStatus !== 'PREPARING' && <p className="text-sm text-red-600">{error}</p>}
+    </>
   );
 }

@@ -295,7 +295,7 @@ describe('backofficeApi inventory core (O1)', () => {
   });
 
   it('createLot POSTs the packaged lot and returns it', async () => {
-    const input = { lotReferenceId: 'lotref-1', lotCode: 'LOT-A', sku: 'SKU-1', roastedAt: '2026-10-01T00:00:00.000Z', bestBefore: '2026-12-01T00:00:00.000Z', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const input = { lotReferenceId: 'lotref-1', lotCode: 'LOT-A', sku: 'SKU-1', roastedAt: '2026-10-01T00:00:00.000Z', bestBefore: '2026-12-01T00:00:00.000Z', locationId: 'l-1', initialQuantityGrams: 5000, actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
     const lot = { lotCode: 'LOT-A', sku: 'SKU-1', roastedAt: input.roastedAt, bestBefore: input.bestBefore, status: 'AVAILABLE' };
     fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => lot });
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Warehouse, Factory, ChevronLeft, ChevronRight, Package, BarChart3, RotateCcw, Search } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Warehouse, Factory, ChevronLeft, ChevronRight, ChevronDown, Package, BarChart3, RotateCcw, Search, Sprout, Wheat } from 'lucide-react';
 import { useState } from 'react';
 import { usePermissions } from '@/contexts/permissions-context';
 
@@ -11,7 +11,17 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   permission?: string;
+  group?: string;
 }
+
+interface NavGroup {
+  label: string;
+  icon: React.ElementType;
+}
+
+const navGroups: NavGroup[] = [
+  { label: 'Finca', icon: Sprout },
+];
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'admin:dashboard:view' },
@@ -21,14 +31,35 @@ const navItems: NavItem[] = [
   { href: '/almacen/transferencias', label: 'Transferencias', icon: Warehouse, permission: 'wms:transfer:create' },
   { href: '/almacen/alertas', label: 'Alertas Stock', icon: Warehouse, permission: 'wms:alert:view' },
   { href: '/almacen/devoluciones', label: 'Devoluciones', icon: RotateCcw, permission: 'wms:return:create' },
+  { href: '/finca/cosechas', label: 'Cosechas', icon: Wheat, group: 'Finca', permission: 'wms:harvest:read' },
   { href: '/produccion', label: 'Producción', icon: Factory, permission: 'mes:order:create' },
   { href: '/produccion/historial', label: 'Historial MES', icon: Factory, permission: 'mes:order:view' },
   { href: '/trazabilidad', label: 'Trazabilidad', icon: Search, permission: 'traceability:lot:view' },
   { href: '/reportes', label: 'Reportes', icon: BarChart3, permission: 'admin:reports:view' },
 ];
 
+function NavLink({ item, activeHref, collapsed, nested }: { item: NavItem; activeHref: string | undefined; collapsed: boolean; nested?: boolean }) {
+  const isActive = item.href === activeHref;
+  const Icon = item.icon;
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${nested ? 'ml-4' : ''} ${
+        isActive ? 'bg-brand-light text-brand-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+      }`}
+      title={collapsed ? item.label : undefined}
+      data-testid={`sidebar-nav-${item.href.replace(/\//g, '-').slice(1)}`}
+    >
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      {!collapsed && <span>{item.label}</span>}
+    </Link>
+  );
+}
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
   const rawPathname = usePathname();
   // Normalize trailing slash (next.config has trailingSlash: true for static export)
   const pathname = rawPathname !== '/' ? rawPathname.replace(/\/$/, '') : rawPathname;
@@ -43,6 +74,17 @@ export function Sidebar() {
     .map((item) => item.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
+
+  const ungrouped = visibleItems.filter((item) => !item.group);
+  const groups = navGroups
+    .map((group) => ({ ...group, items: visibleItems.filter((item) => item.group === group.label) }))
+    .filter((group) => group.items.length > 0);
+
+  function isGroupOpen(label: string) {
+    if (openGroups.includes(label)) return true;
+    // Auto-open the group that owns the active page; never auto-close a manual toggle.
+    return groups.find((g) => g.label === label)?.items.some((item) => item.href === activeHref) ?? false;
+  }
 
   return (
     <aside
@@ -59,22 +101,34 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
-        {visibleItems.map((item) => {
-          const isActive = item.href === activeHref;
-          const Icon = item.icon;
+        {ungrouped.map((item) => (
+          <NavLink key={item.href} item={item} activeHref={activeHref} collapsed={collapsed} />
+        ))}
+        {groups.map((group) => {
+          const GroupIcon = group.icon;
+          const open = collapsed || isGroupOpen(group.label);
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive ? 'bg-brand-light text-brand-primary' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-              title={collapsed ? item.label : undefined}
-              data-testid={`sidebar-nav-${item.href.replace(/\//g, '-').slice(1)}`}
-            >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
+            <div key={group.label}>
+              {!collapsed && (
+                <button
+                  onClick={() =>
+                    setOpenGroups((prev) =>
+                      prev.includes(group.label) ? prev.filter((l) => l !== group.label) : [...prev, group.label],
+                    )
+                  }
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  data-testid={`sidebar-group-${group.label.toLowerCase()}`}
+                >
+                  <GroupIcon className="w-5 h-5 flex-shrink-0" />
+                  <span className="flex-1 text-left">{group.label}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${open ? '' : '-rotate-90'}`} />
+                </button>
+              )}
+              {open &&
+                group.items.map((item) => (
+                  <NavLink key={item.href} item={item} activeHref={activeHref} collapsed={collapsed} nested={!collapsed} />
+                ))}
+            </div>
           );
         })}
       </nav>

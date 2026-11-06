@@ -126,3 +126,93 @@ describe('backofficeApi.mergeLots (T5d)', () => {
     );
   });
 });
+
+describe('backofficeApi harvests (finca)', () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('createHarvest POSTs the RegisterHarvestRequest and returns the direct result', async () => {
+    const input = {
+      harvestReferenceId: 'harv-001',
+      farmId: 'finca-el-mirador',
+      cherryKgGrams: 1200,
+      quality: 'MADURO' as const,
+      harvester: 'Juan Perez',
+      harvestedAt: '2026-11-01T06:00:00.000Z',
+    };
+    const result = { success: true, harvestId: 'h-1', harvestReferenceId: 'harv-001' };
+    fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => result });
+
+    await expect(backofficeApi.createHarvest(input)).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/wms/harvests'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('listHarvests sends farmId plus date filters in the query string and unwraps items', async () => {
+    const record = {
+      harvestId: 'h-1',
+      harvestReferenceId: 'harv-001',
+      farmId: 'finca-el-mirador',
+      cherryKgGrams: 1200,
+      quality: 'MADURO',
+      harvester: 'Juan Perez',
+      harvestedAt: '2026-11-01T06:00:00.000Z',
+      createdAt: '2026-11-01T07:00:00.000Z',
+    };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [record] }) });
+
+    await expect(
+      backofficeApi.listHarvests({ farmId: 'finca-el-mirador', dateFrom: '2026-11-01', dateTo: '2026-11-05' }),
+    ).resolves.toEqual([record]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/backoffice/wms/harvests?');
+    expect(url).toContain('farmId=finca-el-mirador');
+    expect(url).toContain('dateFrom=2026-11-01');
+    expect(url).toContain('dateTo=2026-11-05');
+  });
+
+  it('listHarvestFarms GETs the farms endpoint and unwraps items', async () => {
+    const farms = [{ farmId: 'finca-el-mirador' }, { farmId: 'finca-la-cumbre' }];
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: farms }) });
+
+    await expect(backofficeApi.listHarvestFarms()).resolves.toEqual(farms);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/wms/harvests/farms'),
+      expect.anything(),
+    );
+  });
+
+  it('getHarvest GETs the harvest by id and returns the record', async () => {
+    const record = {
+      harvestId: 'h-1',
+      harvestReferenceId: 'harv-001',
+      farmId: 'finca-el-mirador',
+      cherryKgGrams: 1200,
+      quality: 'MADURO',
+      harvester: 'Juan Perez',
+      harvestedAt: '2026-11-01T06:00:00.000Z',
+      createdAt: '2026-11-01T07:00:00.000Z',
+    };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => record });
+
+    await expect(backofficeApi.getHarvest('h-1')).resolves.toEqual(record);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/wms/harvests/h-1'),
+      expect.anything(),
+    );
+  });
+});

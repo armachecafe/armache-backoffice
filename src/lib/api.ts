@@ -30,6 +30,11 @@ export type SplitLotResult = ContractSchemas['SplitLotResult'];
 export type MergeLotsRequest = ContractSchemas['MergeLotsRequest'];
 export type MergeLotsResult = ContractSchemas['MergeLotsResult'];
 
+// --- Finca: harvests (admin@1.2.0) — request/response shapes used as-is ---
+export type HarvestRecord = ContractSchemas['HarvestRecord'];
+export type RegisterHarvestRequest = ContractSchemas['RegisterHarvestRequest'];
+export type RegisterHarvestResult = ContractSchemas['RegisterHarvestResult'];
+
 // ---------------------------------------------------------------------------
 // UI-facing types DERIVED from the contract (never independently declared)
 // ---------------------------------------------------------------------------
@@ -302,6 +307,25 @@ export const backofficeApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  // --- Finca: harvests (admin@1.2.0). Backend responds 201 with the result
+  // object directly on create; list endpoints wrap rows in {items}. listHarvests
+  // requires farmId (backend 400s without it), so callers must select a farm first.
+  createHarvest: (data: RegisterHarvestRequest) =>
+    fetchBackofficeApi<RegisterHarvestResult>('/backoffice/wms/harvests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  listHarvests: (params: { farmId: string; dateFrom?: string; dateTo?: string }) => {
+    const qs = new URLSearchParams();
+    qs.set('farmId', params.farmId);
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (params?.dateTo) qs.set('dateTo', params.dateTo);
+    return fetchBackofficeApi<{ items: HarvestRecord[]}>(`/backoffice/wms/harvests?${qs}`).then((r) => r.items);
+  },
+  listHarvestFarms: () =>
+    fetchBackofficeApi<{ items: { farmId: string }[] }>('/backoffice/wms/harvests/farms').then((r) => r.items),
+  getHarvest: (harvestId: string) => fetchBackofficeApi<HarvestRecord>(`/backoffice/wms/harvests/${harvestId}`),
 
   // MES
   listProductionOrders: (params?: { status?: string; process?: string }) => {

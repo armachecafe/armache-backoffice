@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { Package, MapPin, Truck, MessageSquare } from 'lucide-react';
 import type { BackofficeOrderDetail, OrderStatus } from '@/lib/api';
 import { backofficeApi } from '@/lib/api';
+import { fulfillmentRows, type OrderDetailWithFulfillment } from '@/lib/order-fulfillment';
 import { StateTransitionButton } from '@/components/orders/state-transition-button';
 import { usePermissions } from '@/contexts/permissions-context';
 
 interface OrderDetailAdminProps {
-  order: BackofficeOrderDetail;
+  order: OrderDetailWithFulfillment;
   onUpdate: () => void;
 }
 
@@ -39,8 +40,28 @@ export function OrderDetailAdmin({ order, onUpdate }: OrderDetailAdminProps) {
           <h2 className="text-xl font-bold text-gray-900">{order.orderCode}</h2>
           <p className="text-sm text-gray-500">{createdDate}</p>
         </div>
-        <StateTransitionButton orderId={order.orderId} currentStatus={order.status} onTransition={onUpdate} />
+        <StateTransitionButton orderId={order.orderId} currentStatus={order.status} onTransition={onUpdate} isPickup={false} />
+        {/* isPickup is wired for when the contract exposes the pickup store; today it is always shipping. */}
       </div>
+
+      {/* Despacho: only renders once the backend includes fulfillment in the order detail */}
+      {order.fulfillment && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4" data-testid="order-fulfillment">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Despacho</h3>
+          <p className="text-sm text-gray-600">CD: <span className="font-medium">{order.fulfillment.fulfillmentLocationId ?? '—'}</span></p>
+          {order.fulfillment.assignedAt && (
+            <p className="text-xs text-gray-400">Asignado: {new Date(order.fulfillment.assignedAt).toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+          )}
+          {order.fulfillment.readyForPickupAt && (
+            <p className="text-xs text-gray-400">Listo para retiro: {new Date(order.fulfillment.readyForPickupAt).toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+          )}
+          <div className="mt-2 space-y-1">
+            {fulfillmentRows(order).map((row) => (
+              <p key={row.lotCode} className="font-mono text-xs text-gray-700">{row.lotCode} ×{row.quantity}</p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">

@@ -373,9 +373,9 @@ export const backofficeApi = {
     const suffix = qs.toString() ? `?${qs}` : '';
     return fetchBackofficeApi<{ items: Location[] }>(`/backoffice/locations${suffix}`).then((r) => r.items);
   },
-  createLocation: (data: CreateLocationRequest) =>
+  createLocation: (data: CreateLocationRequest & { actorId: string; at: string }) =>
     fetchBackofficeApi<Location>('/backoffice/locations', { method: 'POST', body: JSON.stringify(data) }),
-  updateLocation: (locationId: string, data: UpdateLocationRequest) =>
+  updateLocation: (locationId: string, data: UpdateLocationRequest & { actorId: string; at: string }) =>
     fetchBackofficeApi<Location>(`/backoffice/locations/${locationId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

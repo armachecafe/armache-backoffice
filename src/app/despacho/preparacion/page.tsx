@@ -7,6 +7,7 @@ import { LocationPicker } from '@/components/inventory/location-picker';
 import { ScanInput } from '@/components/inventory/scan-input';
 import { parseScan, addLineScan, removeLineScan, isComplete, needsFefoReason, type PickLine } from '@/lib/scan-session';
 import { pickLines, canStartPicking } from '@/lib/picking';
+import { dispatchMode } from '@/lib/dispatch';
 import { apiErrorMessage } from '@/lib/api-errors';
 
 export default function PreparacionPage() {
@@ -20,6 +21,8 @@ export default function PreparacionPage() {
   const [waitingTransfer, setWaitingTransfer] = useState(false);
   const [pendingScan, setPendingScan] = useState<{ lotCode: string; sku: string } | null>(null);
   const [fefoReason, setFefoReason] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [courierName, setCourierName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
@@ -140,6 +143,29 @@ export default function PreparacionPage() {
     await doPick(parsed.lotCode, lot.sku, fefoReason.trim() || undefined);
   }
 
+  async function handleDispatch() {
+    if (!orderId || !complete) return;
+    // pickupLocationId is not in the 1.4.0 order types; until the contract exposes
+    // it every dispatch goes out as a shipment from this location.
+    const mode = dispatchMode({ fulfillmentLocationId: locationId });
+    if (mode !== 'SHIP') return;
+    setSubmitting(true);
+    setError('');
+    try {
+      await backofficeApi.transitionOrder(orderId, 'DISPATCHED', { trackingNumber, courierName });
+      setDone('Pedido despachado');
+      setOrderId(null);
+      setLines([]);
+      setTrackingNumber('');
+      setCourierName('');
+      await reloadQueues();
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo despachar el pedido'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleUnpick(lotCode: string) {
     if (!orderId) return;
     setSubmitting(true);
@@ -244,7 +270,24 @@ export default function PreparacionPage() {
                       </button>
                     </div>
                   )}
-                  {complete && <p className="text-sm text-green-700" data-testid="preparacion-complete">Pedido completo. Se despacha desde el detalle.</p>}
+                  {complete && (
+                    <>
+                      <p className="text-sm text-green-700" data-testid="preparacion-complete">Pedido completo. Completá el despacho:</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor="dispatch-tracking" className="block text-sm font-medium text-gray-700 mb-1">Tracking</label>
+                          <input id="dispatch-tracking" type="text" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono" data-testid="dispatch-tracking" />
+                        </div>
+                        <div>
+                          <label htmlFor="dispatch-courier" className="block text-sm font-medium text-gray-700 mb-1">Courier</label>
+                          <input id="dispatch-courier" type="text" value={courierName} onChange={(e) => setCourierName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="dispatch-courier" />
+                        </div>
+                      </div>
+                      <button onClick={handleDispatch} disabled={submitting} className="w-full py-2.5 bg-brand-primary text-white font-medium rounded-lg disabled:opacity-50" data-testid="dispatch-submit">
+                        {submitting ? 'Despachando...' : 'Marcar despachado'}
+                      </button>
+                    </>
+                  )}
                 </>
               )}
               {error && <p className="text-sm text-red-600">{error}</p>}

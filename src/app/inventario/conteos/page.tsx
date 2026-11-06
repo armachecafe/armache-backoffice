@@ -14,6 +14,7 @@ interface NewLotForm {
   sku: string;
   roastedAt: string;
   bestBefore: string;
+  initialGrams: string;
 }
 
 export default function ConteosPage() {
@@ -51,13 +52,18 @@ export default function ConteosPage() {
     } catch {
       const products = await backofficeApi.listProducts({ pageSize: 50 }).catch(() => ({ items: [] as BackofficeProduct[] }));
       setProducts(products.items ?? []);
-      setNewLot({ lotCode: parsed.lotCode, sku: '', roastedAt: '', bestBefore: parsed.bestBefore ?? '' });
+      setNewLot({ lotCode: parsed.lotCode, sku: '', roastedAt: '', bestBefore: parsed.bestBefore ?? '', initialGrams: '' });
     }
   }
 
   async function handleSaveNewLot(e: React.FormEvent) {
     e.preventDefault();
     if (!newLot || !newLot.sku || !newLot.roastedAt || !newLot.bestBefore) return;
+    const grams = Math.floor(Number(newLot.initialGrams));
+    if (!Number.isInteger(grams) || grams <= 0) {
+      setError('Indicá los gramos iniciales');
+      return;
+    }
     setSavingLot(true);
     setError('');
     try {
@@ -67,6 +73,8 @@ export default function ConteosPage() {
         sku: newLot.sku,
         roastedAt: new Date(newLot.roastedAt).toISOString(),
         bestBefore: new Date(newLot.bestBefore).toISOString(),
+        locationId,
+        initialQuantityGrams: grams,
         actorId: user?.userId ?? '',
         at: new Date().toISOString(),
       });
@@ -149,7 +157,11 @@ export default function ConteosPage() {
                   <input id="new-lot-best-before" type="date" value={newLot.bestBefore} onChange={(e) => setNewLot({ ...newLot, bestBefore: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="new-lot-best-before" />
                 </div>
               </div>
-              <button type="submit" disabled={savingLot || !newLot.sku || !newLot.roastedAt || !newLot.bestBefore} className="px-4 py-2 bg-brand-primary text-white text-sm font-medium rounded-lg disabled:opacity-50" data-testid="new-lot-submit">
+              <div>
+                <label htmlFor="new-lot-grams" className="block text-sm font-medium text-gray-700 mb-1">Cantidad inicial (gramos, entero)</label>
+                <input id="new-lot-grams" type="number" min="1" step="1" value={newLot.initialGrams} onChange={(e) => setNewLot({ ...newLot, initialGrams: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ej: 5000" data-testid="new-lot-grams" />
+              </div>
+              <button type="submit" disabled={savingLot || !newLot.sku || !newLot.roastedAt || !newLot.bestBefore || !newLot.initialGrams} className="px-4 py-2 bg-brand-primary text-white text-sm font-medium rounded-lg disabled:opacity-50" data-testid="new-lot-submit">
                 {savingLot ? 'Registrando...' : 'Registrar lote'}
               </button>
             </form>

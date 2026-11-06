@@ -396,3 +396,101 @@ describe('backofficeApi inventory transfers (O1)', () => {
     ).rejects.toThrow('409');
   });
 });
+
+describe('backofficeApi fulfillment (O2)', () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('getFulfillmentOptions GETs the options and unwraps them', async () => {
+    const options = { options: [{ locationId: 'l-1', name: 'CD Norte', fullyAvailable: true, lines: [{ sku: 'SKU-1', requested: 2, available: 5 }] }] };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => options });
+
+    await expect(backofficeApi.getFulfillmentOptions('o-1')).resolves.toEqual(options.options);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/orders/o-1/fulfillment-options'),
+      expect.anything(),
+    );
+  });
+
+  it('assignOrder POSTs the assignment and returns the result', async () => {
+    const input = { fulfillmentLocationId: 'l-1', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const result = { success: true, fulfillmentLocationId: 'l-1' };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => result });
+
+    await expect(backofficeApi.assignOrder('o-1', input)).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/orders/o-1/assign'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('pickOrder POSTs the scans and returns the picked lots', async () => {
+    const input = { pickReferenceId: 'p-1', scans: [{ lotCode: 'LOT-A', quantity: 2 }], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const result = { success: true, picked: [{ lotCode: 'LOT-A', quantity: 2 }] };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => result });
+
+    await expect(backofficeApi.pickOrder('o-1', input)).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/orders/o-1/pick'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('unpickOrder POSTs the lot and quantity to release', async () => {
+    const input = { unpickReferenceId: 'u-1', lotCode: 'LOT-A', quantity: 1, actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ success: true }) });
+
+    await expect(backofficeApi.unpickOrder('o-1', input)).resolves.toEqual({ success: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/orders/o-1/unpick'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('sendOrderToPickupStore POSTs and returns the transfer', async () => {
+    const input = { sendReferenceId: 's-1', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const result = { success: true, transferId: 't-9' };
+    fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => result });
+
+    await expect(backofficeApi.sendOrderToPickupStore('o-1', input)).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/orders/o-1/send-to-pickup-store'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('listOrders sends the O2 filters including assigned=false', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [], nextCursor: undefined }) });
+
+    await backofficeApi.listOrders({ status: 'CONFIRMED', assigned: false, fulfillmentLocationId: 'l-1', pickupLocationId: 'l-2' });
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/backoffice/orders?');
+    expect(url).toContain('assigned=false');
+    expect(url).toContain('fulfillmentLocationId=l-1');
+    expect(url).toContain('pickupLocationId=l-2');
+  });
+
+  it('listOrders without O2 filters builds the same URL as before', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [], nextCursor: undefined }) });
+
+    await backofficeApi.listOrders({ status: 'CONFIRMED', pageSize: 20 });
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://api.armachecafe.com/backoffice/orders?status=CONFIRMED&pageSize=20');
+  });
+
+  it('assignOrder rejects with the status on conflict', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 409, statusText: 'Conflict', text: async () => '{"code":"CONFLICT"}' });
+
+    await expect(
+      backofficeApi.assignOrder('o-1', { fulfillmentLocationId: 'l-1', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' }),
+    ).rejects.toThrow('409');
+  });
+});

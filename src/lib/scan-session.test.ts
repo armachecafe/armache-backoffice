@@ -30,6 +30,26 @@ describe('parseScan (GS1-128)', () => {
     expect(parseScan('(01)07701234567898')).toEqual({ ok: false, error: 'UNREADABLE' });
     expect(parseScan('   ')).toEqual({ ok: false, error: 'UNREADABLE' });
   });
+
+  it('parses bare AI prefixes without parentheses', () => {
+    expect(parseScan('010770123456789810TEST-LOT-E2E-01')).toEqual({
+      ok: true,
+      gtin: '07701234567898',
+      lotCode: 'TEST-LOT-E2E-01',
+    });
+  });
+
+  it('parses GS-separated segments and strips the symbology identifier', () => {
+    expect(parseScan(']C10107701234567898\u001D10LOT-GS')).toEqual({
+      ok: true,
+      gtin: '07701234567898',
+      lotCode: 'LOT-GS',
+    });
+  });
+
+  it('accepts scans without GTIN when the lot is present', () => {
+    expect(parseScan('10LOT-NOGTIN')).toEqual({ ok: true, gtin: undefined, lotCode: 'LOT-NOGTIN' });
+  });
 });
 
 describe('count and pick lines', () => {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Search, ArrowDown, ArrowUp } from 'lucide-react';
-import { backofficeApi, type LotTraceability, type LotSearchResult, type RecallReport, type PackagedLotStatus } from '@/lib/api';
+import { backofficeApi, type LotTraceability, type LotSearchResult, type RecallReport, type PackagedLotStatus, type LotForwardOrder, type RecallRemainingStock } from '@/lib/api';
 import { usePermissions } from '@/contexts/permissions-context';
 import { recallTotals, validateStatusChange } from '@/lib/recall';
 import { apiErrorMessage } from '@/lib/api-errors';
@@ -157,7 +157,7 @@ export default function TrazabilidadAdminPage() {
               <p className="text-sm text-gray-400">Sin insumos registrados (lote raíz o importado)</p>
             ) : (
               <div className="space-y-2">
-                {selectedLot.backward.map((link, i) => (
+                {selectedLot.backward.map((link: { lotCode: string; relation: string; sku?: string }, i: number) => (
                   <div key={i} className="flex items-center gap-3 p-2 bg-blue-50 rounded">
                     <span className="font-mono text-xs text-blue-700">{link.lotCode}</span>
                     <span className="text-xs text-gray-500">{link.sku}</span>
@@ -177,7 +177,7 @@ export default function TrazabilidadAdminPage() {
               <p className="text-sm text-gray-400">Sin pedidos asociados a este lote</p>
             ) : (
               <div className="space-y-2">
-                {selectedLot.forward.map((link, i) => (
+                {selectedLot.forward.map((link: LotForwardOrder, i: number) => (
                   <div key={i} className="flex items-center gap-3 p-2 bg-green-50 rounded" data-testid={`forward-order-${link.orderId}`}>
                     <span className="font-mono text-xs text-green-700">{link.orderCode}</span>
                     {link.customerName && <span className="text-xs text-gray-500">{link.customerName}</span>}
@@ -225,12 +225,12 @@ export default function TrazabilidadAdminPage() {
                   <p className="text-sm text-gray-700">
                     Unidades en stock: <span className="font-medium">{totals.unitsInStock}</span> · Pedidos afectados: <span className="font-medium">{totals.ordersAffected}</span>
                   </p>
-                  {recall.remainingByLocation.map((r) => (
+                  {recall.remainingByLocation.map((r: RecallRemainingStock) => (
                     <p key={`${r.locationId}-${r.lotCode}`} className="text-xs text-gray-500 font-mono">
                       {r.locationId}: {r.lotCode} ×{r.quantity}
                     </p>
                   ))}
-                  {recall.affectedOrders.map((o) => (
+                  {recall.affectedOrders.map((o: LotForwardOrder) => (
                     <div key={o.orderId} className="flex items-center gap-3 p-2 bg-red-50 rounded text-xs" data-testid={`recall-order-${o.orderId}`}>
                       <span className="font-mono font-medium">{o.orderCode}</span>
                       {o.customerName && <span className="text-gray-500">{o.customerName}</span>}

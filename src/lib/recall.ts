@@ -1,8 +1,8 @@
-import type { RecallReport } from './api';
+import type { RecallReport, RecallRemainingStock } from './api';
 
 export function recallTotals(recall: RecallReport): { unitsInStock: number; ordersAffected: number } {
   return {
-    unitsInStock: recall.remainingByLocation.reduce((n, r) => n + r.quantity, 0),
+    unitsInStock: recall.remainingByLocation.reduce((n: number, r: RecallRemainingStock) => n + r.quantity, 0),
     ordersAffected: recall.affectedOrders.length,
   };
 }

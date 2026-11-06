@@ -216,3 +216,111 @@ describe('backofficeApi harvests (finca)', () => {
     );
   });
 });
+
+describe('backofficeApi inventory core (O1)', () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('listLocations sends the role filter and unwraps items', async () => {
+    const locations = [{ locationId: 'l-1', code: 'CD-NORTE', name: 'CD Norte', roles: ['DISTRIBUTION'], active: true }];
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: locations }) });
+
+    await expect(backofficeApi.listLocations({ role: 'DISTRIBUTION' })).resolves.toEqual(locations);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/backoffice/locations?');
+    expect(url).toContain('role=DISTRIBUTION');
+  });
+
+  it('createLocation POSTs the request and returns the location', async () => {
+    const input = { code: 'CD-NORTE', name: 'CD Norte', roles: ['DISTRIBUTION' as 'DISTRIBUTION'] };
+    const location = { locationId: 'l-1', ...input, active: true };
+    fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => location });
+
+    await expect(backofficeApi.createLocation(input)).resolves.toEqual(location);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/locations'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('updateLocation PATCHes the location by id', async () => {
+    const location = { locationId: 'l-1', code: 'CD-NORTE', name: 'CD Norte Nuevo', roles: ['DISTRIBUTION'], active: true };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => location });
+
+    await expect(backofficeApi.updateLocation('l-1', { name: 'CD Norte Nuevo' })).resolves.toEqual(location);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/locations/l-1'),
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ name: 'CD Norte Nuevo' }) }),
+    );
+  });
+
+  it('getStock GETs without query params and unwraps items', async () => {
+    const rows = [{ locationId: 'l-1', sku: 'SKU-1', lotCode: 'LOT-A', lotStatus: 'AVAILABLE', onHand: 10, reserved: 0, allocated: 0, available: 10, bestBefore: '2026-12-01T00:00:00.000Z' }];
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: rows }) });
+
+    await expect(backofficeApi.getStock()).resolves.toEqual(rows);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/backoffice/inventory/stock');
+    expect(url).not.toContain('?');
+  });
+
+  it('listMovements GETs without query params and unwraps items', async () => {
+    const movements = [{ movementId: 'm-1', type: 'IN', locationId: 'l-1', lotCode: 'LOT-A', quantity: 10, referenceId: 'ref-1', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z', source: { kind: 'count', id: 'c-1' } }];
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: movements }) });
+
+    await expect(backofficeApi.listMovements()).resolves.toEqual(movements);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/movements'),
+      expect.anything(),
+    );
+  });
+
+  it('getLot GETs the packaged lot by encoded code', async () => {
+    const lot = { lotCode: 'LOT-A', sku: 'SKU-1', roastedAt: '2026-10-01T00:00:00.000Z', bestBefore: '2026-12-01T00:00:00.000Z', status: 'AVAILABLE' };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => lot });
+
+    await expect(backofficeApi.getLot('LOT-A')).resolves.toEqual(lot);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/lots/LOT-A'),
+      expect.anything(),
+    );
+  });
+
+  it('createLot POSTs the packaged lot and returns it', async () => {
+    const input = { lotReferenceId: 'lotref-1', lotCode: 'LOT-A', sku: 'SKU-1', roastedAt: '2026-10-01T00:00:00.000Z', bestBefore: '2026-12-01T00:00:00.000Z', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const lot = { lotCode: 'LOT-A', sku: 'SKU-1', roastedAt: input.roastedAt, bestBefore: input.bestBefore, status: 'AVAILABLE' };
+    fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => lot });
+
+    await expect(backofficeApi.createLot(input)).resolves.toEqual(lot);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/lots'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('createCount POSTs the count and returns the result', async () => {
+    const input = { countReferenceId: 'cnt-1', locationId: 'l-1', reason: 'conteo inicial', lines: [{ lotCode: 'LOT-A', countedQuantity: 10 }], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const result = { success: true, countReferenceId: 'cnt-1' };
+    fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => result });
+
+    await expect(backofficeApi.createCount(input)).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/counts'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('createCount rejects with the status on conflict', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 409, statusText: 'Conflict', text: async () => '{"code":"CONFLICT"}' });
+
+    await expect(backofficeApi.createCount({ countReferenceId: 'cnt-1', locationId: 'l-1', reason: 'x', lines: [], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' })).rejects.toThrow('409');
+  });
+});

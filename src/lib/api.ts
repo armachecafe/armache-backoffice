@@ -35,6 +35,20 @@ export type HarvestRecord = ContractSchemas['HarvestRecord'];
 export type RegisterHarvestRequest = ContractSchemas['RegisterHarvestRequest'];
 export type RegisterHarvestResult = ContractSchemas['RegisterHarvestResult'];
 
+// --- Outflow O1: inventory core (admin@1.3.0) — request/response shapes used as-is ---
+export type Location = ContractSchemas['Location'];
+export type LocationRole = ContractSchemas['LocationRole'];
+export type CreateLocationRequest = ContractSchemas['CreateLocationRequest'];
+export type UpdateLocationRequest = ContractSchemas['UpdateLocationRequest'];
+export type StockRow = ContractSchemas['StockRow'];
+export type InventoryMovement = ContractSchemas['InventoryMovement'];
+export type PackagedLot = ContractSchemas['PackagedLot'];
+export type PackagedLotStatus = ContractSchemas['PackagedLotStatus'];
+export type CreatePackagedLotRequest = ContractSchemas['CreatePackagedLotRequest'];
+export type CountLine = ContractSchemas['CountLine'];
+export type CountRequest = ContractSchemas['CountRequest'];
+export type CountResult = ContractSchemas['CountResult'];
+
 // ---------------------------------------------------------------------------
 // UI-facing types DERIVED from the contract (never independently declared)
 // ---------------------------------------------------------------------------
@@ -326,6 +340,31 @@ export const backofficeApi = {
   listHarvestFarms: () =>
     fetchBackofficeApi<{ items: { farmId: string }[] }>('/backoffice/wms/harvests/farms').then((r) => r.items),
   getHarvest: (harvestId: string) => fetchBackofficeApi<HarvestRecord>(`/backoffice/wms/harvests/${harvestId}`),
+
+  // --- Outflow O1: inventory core (admin@1.3.0). Stock and movement lists take
+  // no query params; filtering happens client-side. Locations derive the actor
+  // from the token; counts, lots, transfers, shipping and receiving carry actorId.
+  listLocations: (params?: { role?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.role) qs.set('role', params.role);
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return fetchBackofficeApi<{ items: Location[] }>(`/backoffice/locations${suffix}`).then((r) => r.items);
+  },
+  createLocation: (data: CreateLocationRequest) =>
+    fetchBackofficeApi<Location>('/backoffice/locations', { method: 'POST', body: JSON.stringify(data) }),
+  updateLocation: (locationId: string, data: UpdateLocationRequest) =>
+    fetchBackofficeApi<Location>(`/backoffice/locations/${locationId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  getStock: () => fetchBackofficeApi<{ items: StockRow[] }>('/backoffice/inventory/stock').then((r) => r.items),
+  listMovements: () =>
+    fetchBackofficeApi<{ items: InventoryMovement[] }>('/backoffice/inventory/movements').then((r) => r.items),
+  getLot: (lotCode: string) => fetchBackofficeApi<PackagedLot>(`/backoffice/inventory/lots/${encodeURIComponent(lotCode)}`),
+  createLot: (data: CreatePackagedLotRequest) =>
+    fetchBackofficeApi<PackagedLot>('/backoffice/inventory/lots', { method: 'POST', body: JSON.stringify(data) }),
+  createCount: (data: CountRequest) =>
+    fetchBackofficeApi<CountResult>('/backoffice/inventory/counts', { method: 'POST', body: JSON.stringify(data) }),
 
   // MES
   listProductionOrders: (params?: { status?: string; process?: string }) => {

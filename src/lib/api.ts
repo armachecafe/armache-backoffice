@@ -237,18 +237,21 @@ export interface ProductionReport {
   byProcess: { process: string; count: number; producedKg: number; wasteKg: number }[];
 }
 
-export interface LotTraceability {
-  lot: { lotId: string; lotCode: string; sku: string; productName: string; createdAt: string };
-  backward: { ancestorLotId: string; ancestorLotCode: string; ancestorSku: string; relationship: string }[];
-  forward: { orderId: string; orderCode: string; customerName?: string; linkedAt: string }[];
-}
+// --- Traceability O3 (admin@1.5.0): contract shapes used as-is. The old hand-written
+// LotTraceability/LotSearchResult are gone; call sites were migrated to contract fields.
+export type LotTraceability = ContractSchemas['LotTraceability'];
+export type LotSearchResult = ContractSchemas['LotSearchResult'];
+export type LotForwardOrder = ContractSchemas['LotForwardOrder'];
+export type LotStatusResult = ContractSchemas['LotStatusResult'];
+export type RecallReport = ContractSchemas['RecallReport'];
+export type RecallRemainingStock = ContractSchemas['RecallRemainingStock'];
 
-export interface LotSearchResult {
-  lotId: string;
-  lotCode: string;
-  sku: string;
-  productName: string;
-  createdAt: string;
+// Set-status request body: the contract defines it inline (no named schema).
+export interface SetLotStatusInput {
+  status: PackagedLotStatus;
+  reason: string;
+  actorId: string;
+  at: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -522,7 +525,14 @@ export const backofficeApi = {
     fetchBackofficeApi<{ success: boolean }>(`/backoffice/wms/returns/${returnId}/confirm`, { method: 'POST' }),
 
   // --- Ronda 2: Traceability Admin (TRZ-02) ---
-  getLotTraceability: (lotId: string) => fetchBackofficeApi<LotTraceability>(`/backoffice/traceability/lots/${lotId}`),
+  getLotTraceability: (lotCode: string) => fetchBackofficeApi<LotTraceability>(`/backoffice/traceability/lots/${encodeURIComponent(lotCode)}`),
   searchLots: (query: string) =>
     fetchBackofficeApi<{ items: LotSearchResult[] }>(`/backoffice/traceability/lots?search=${encodeURIComponent(query)}`).then((r) => r.items),
+  setLotStatus: (lotCode: string, data: SetLotStatusInput) =>
+    fetchBackofficeApi<LotStatusResult>(`/backoffice/inventory/lots/${encodeURIComponent(lotCode)}/status`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getLotRecall: (lotCode: string) =>
+    fetchBackofficeApi<RecallReport>(`/backoffice/inventory/lots/${encodeURIComponent(lotCode)}/recall`),
 };

@@ -494,3 +494,63 @@ describe('backofficeApi fulfillment (O2)', () => {
     ).rejects.toThrow('409');
   });
 });
+
+describe('backofficeApi traceability and recall (O3)', () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('setLotStatus POSTs the status change and returns the result', async () => {
+    const input = { status: 'QUARANTINE' as const, reason: 'sospecha de humedad', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const result = { success: true, lotCode: 'LOT-A', status: 'QUARANTINE', affectedLots: ['LOT-A', 'LOT-B'] };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => result });
+
+    await expect(backofficeApi.setLotStatus('LOT-A', input)).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/lots/LOT-A/status'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
+    );
+  });
+
+  it('getLotRecall GETs the recall report by encoded lot code', async () => {
+    const report = { lotCode: 'LOT-A', status: 'QUARANTINE', remainingByLocation: [{ locationId: 'l-1', lotCode: 'LOT-A', quantity: 5 }], affectedOrders: [] };
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => report });
+
+    await expect(backofficeApi.getLotRecall('LOT-A')).resolves.toEqual(report);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/backoffice/inventory/lots/LOT-A/recall'),
+      expect.anything(),
+    );
+  });
+
+  it('searchLots builds the same URL as before', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [] }) });
+
+    await backofficeApi.searchLots('ABC');
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://api.armachecafe.com/backoffice/traceability/lots?search=ABC');
+  });
+
+  it('setLotStatus rejects with the status on conflict', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 409, statusText: 'Conflict', text: async () => '{"code":"CONFLICT"}' });
+
+    await expect(
+      backofficeApi.setLotStatus('LOT-A', { status: 'QUARANTINE' as const, reason: 'x', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' }),
+    ).rejects.toThrow('409');
+  });
+
+  it('getLotTraceability encodes the lot code in the URL', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ lot: {}, backward: [], forward: [] }) });
+
+    await backofficeApi.getLotTraceability('LOT A/1');
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('/backoffice/traceability/lots/LOT%20A%2F1');
+  });
+});

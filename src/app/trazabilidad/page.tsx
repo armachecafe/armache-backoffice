@@ -25,10 +25,10 @@ export default function TrazabilidadAdminPage() {
     }
   }
 
-  async function handleSelectLot(lotId: string) {
+  async function handleSelectLot(lotCode: string) {
     setLoading(true);
     try {
-      const data = await backofficeApi.getLotTraceability(lotId);
+      const data = await backofficeApi.getLotTraceability(lotCode);
       setSelectedLot(data);
     } catch {
       setSelectedLot(null);
@@ -65,16 +65,16 @@ export default function TrazabilidadAdminPage() {
         <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
           {searchResults.map((lot) => (
             <button
-              key={lot.lotId}
-              onClick={() => handleSelectLot(lot.lotId)}
+              key={lot.lotCode}
+              onClick={() => handleSelectLot(lot.lotCode)}
               className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center justify-between"
-              data-testid={`lot-result-${lot.lotId}`}
+              data-testid={`lot-result-${lot.lotCode}`}
             >
               <div>
                 <p className="font-mono text-sm font-medium text-brand-primary">{lot.lotCode}</p>
                 <p className="text-xs text-gray-500">{lot.productName} · {lot.sku}</p>
               </div>
-              <span className="text-xs text-gray-400">{new Date(lot.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              <span className="text-xs text-gray-400">{lot.roastDate ? new Date(lot.roastDate).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
             </button>
           ))}
         </div>
@@ -89,7 +89,7 @@ export default function TrazabilidadAdminPage() {
               <span className="px-3 py-1 bg-brand-primary/10 text-brand-primary font-mono text-sm font-semibold rounded-full">{selectedLot.lot.lotCode}</span>
               <span className="text-sm text-gray-600">{selectedLot.lot.productName}</span>
             </div>
-            <p className="text-xs text-gray-400">SKU: {selectedLot.lot.sku} · Creado: {new Date(selectedLot.lot.createdAt).toLocaleDateString('es-PE')}</p>
+            <p className="text-xs text-gray-400">SKU: {selectedLot.lot.sku} · Tostado: {new Date(selectedLot.lot.roastDate).toLocaleDateString('es-PE')}</p>
           </div>
 
           {/* Backward traceability */}
@@ -103,9 +103,9 @@ export default function TrazabilidadAdminPage() {
               <div className="space-y-2">
                 {selectedLot.backward.map((link, i) => (
                   <div key={i} className="flex items-center gap-3 p-2 bg-blue-50 rounded">
-                    <span className="font-mono text-xs text-blue-700">{link.ancestorLotCode}</span>
-                    <span className="text-xs text-gray-500">{link.ancestorSku}</span>
-                    <span className="text-[10px] text-gray-400 ml-auto">{link.relationship}</span>
+                    <span className="font-mono text-xs text-blue-700">{link.lotCode}</span>
+                    <span className="text-xs text-gray-500">{link.sku}</span>
+                    <span className="text-[10px] text-gray-400 ml-auto">{link.relation}</span>
                   </div>
                 ))}
               </div>
@@ -125,7 +125,7 @@ export default function TrazabilidadAdminPage() {
                   <div key={i} className="flex items-center gap-3 p-2 bg-green-50 rounded">
                     <span className="font-mono text-xs text-green-700">{link.orderCode}</span>
                     {link.customerName && <span className="text-xs text-gray-500">{link.customerName}</span>}
-                    <span className="text-[10px] text-gray-400 ml-auto">{new Date(link.linkedAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-[10px] text-gray-400 ml-auto">{link.dispatchedAt ? new Date(link.dispatchedAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' }) : ''}</span>
                   </div>
                 ))}
               </div>

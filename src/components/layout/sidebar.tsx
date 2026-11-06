@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Warehouse, Factory, ChevronLeft, ChevronRight, ChevronDown, Package, BarChart3, RotateCcw, Search, Sprout, Wheat } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Warehouse, Factory, ChevronLeft, ChevronRight, ChevronDown, Package, BarChart3, RotateCcw, Search, Sprout, Wheat, Boxes, PackageCheck } from 'lucide-react';
 import { useState } from 'react';
 import { usePermissions } from '@/contexts/permissions-context';
 
@@ -21,6 +21,7 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   { label: 'Finca', icon: Sprout },
+  { label: 'Inventario', icon: Boxes },
 ];
 
 const navItems: NavItem[] = [
@@ -32,6 +33,8 @@ const navItems: NavItem[] = [
   { href: '/almacen/alertas', label: 'Alertas Stock', icon: Warehouse, permission: 'wms:alert:view' },
   { href: '/almacen/devoluciones', label: 'Devoluciones', icon: RotateCcw, permission: 'wms:return:create' },
   { href: '/finca/cosechas', label: 'Cosechas', icon: Wheat, group: 'Finca', permission: 'wms:harvest:read' },
+  { href: '/inventario/ubicaciones', label: 'Ubicaciones', icon: Warehouse, group: 'Inventario', permission: 'location:manage' },
+  { href: '/inventario/stock', label: 'Stock', icon: PackageCheck, group: 'Inventario', permission: 'inventory:view' },
   { href: '/produccion', label: 'Producción', icon: Factory, permission: 'mes:order:create' },
   { href: '/produccion/historial', label: 'Historial MES', icon: Factory, permission: 'mes:order:view' },
   { href: '/trazabilidad', label: 'Trazabilidad', icon: Search, permission: 'traceability:lot:view' },

@@ -240,7 +240,7 @@ describe('backofficeApi inventory core (O1)', () => {
   });
 
   it('createLocation POSTs the request and returns the location', async () => {
-    const input = { code: 'CD-NORTE', name: 'CD Norte', roles: ['DISTRIBUTION' as 'DISTRIBUTION'] };
+    const input = { code: 'CD-NORTE', name: 'CD Norte', roles: ['DISTRIBUTION' as 'DISTRIBUTION'], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
     const location = { locationId: 'l-1', ...input, active: true };
     fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => location });
 
@@ -255,10 +255,10 @@ describe('backofficeApi inventory core (O1)', () => {
     const location = { locationId: 'l-1', code: 'CD-NORTE', name: 'CD Norte Nuevo', roles: ['DISTRIBUTION'], active: true };
     fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => location });
 
-    await expect(backofficeApi.updateLocation('l-1', { name: 'CD Norte Nuevo' })).resolves.toEqual(location);
+    await expect(backofficeApi.updateLocation('l-1', { name: 'CD Norte Nuevo', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' })).resolves.toEqual(location);
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/backoffice/locations/l-1'),
-      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ name: 'CD Norte Nuevo' }) }),
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ name: 'CD Norte Nuevo', actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' }) }),
     );
   });
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { backofficeApi, type BackofficeOrderSummary, type FulfillmentOption } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
-import { coverage, validateAssign } from '@/lib/assignment';
+import { coverage, validateAssign, shortfall, sourceCandidates } from '@/lib/assignment';
 import { apiErrorMessage } from '@/lib/api-errors';
 
 type Tab = 'unassigned' | 'assigned';
@@ -18,6 +18,9 @@ export default function AsignacionPage() {
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [chosenId, setChosenId] = useState('');
   const [reason, setReason] = useState('');
+  const [shortfallSource, setShortfallSource] = useState('');
+  const [shortfallCandidates, setShortfallCandidates] = useState<string[]>([]);
+  const [pendingTransferId, setPendingTransferId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,6 +47,9 @@ export default function AsignacionPage() {
     setSelectedId(orderId);
     setChosenId('');
     setReason('');
+    setShortfallSource('');
+    setShortfallCandidates([]);
+    setPendingTransferId(null);
     setError('');
     setLoadingOptions(true);
     try {
@@ -53,6 +59,38 @@ export default function AsignacionPage() {
       setOptions([]);
     } finally {
       setLoadingOptions(false);
+    }
+  }
+
+  const chosenOption = options.find((o) => o.locationId === chosenId) ?? null;
+  const missingLines = chosenOption ? shortfall(chosenOption) : [];
+
+  async function handleLoadCandidates() {
+    if (!chosenOption) return;
+    const rows = await backofficeApi.getStock().catch(() => []);
+    setShortfallSource('');
+    setShortfallCandidates(sourceCandidates(rows, missingLines, chosenOption.locationId));
+  }
+
+  async function handleCreateShortfallTransfer() {
+    if (!selectedId || !chosenOption || !shortfallSource || missingLines.length === 0) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const transfer = await backofficeApi.createInventoryTransfer({
+        transferReferenceId: crypto.randomUUID(),
+        fromLocationId: shortfallSource,
+        toLocationId: chosenOption.locationId,
+        forOrderId: selectedId,
+        lines: missingLines.map((l) => ({ sku: l.sku, quantity: l.missing, lots: [] })),
+        actorId: user?.userId ?? '',
+        at: new Date().toISOString(),
+      });
+      setPendingTransferId(transfer.transferId);
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo crear el traslado del faltante'));
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -124,7 +162,7 @@ export default function AsignacionPage() {
                 const cov = coverage(opt);
                 return (
                   <label key={opt.locationId} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50" data-testid={`asignacion-option-${opt.locationId}`}>
-                    <input type="radio" name="fulfillment-location" checked={chosenId === opt.locationId} onChange={() => setChosenId(opt.locationId)} />
+                    <input type="radio" name="fulfillment-location" checked={chosenId === opt.locationId} onChange={() => { setChosenId(opt.locationId); setShortfallSource(''); setShortfallCandidates([]); }} />
                     <span className="flex-1">
                       <span className="block text-sm font-medium">{opt.name}</span>
                       <span className="block text-xs text-gray-500">
@@ -137,6 +175,35 @@ export default function AsignacionPage() {
                 );
               })}
               {options.length === 0 && <p className="text-sm text-gray-400">Sin ubicaciones candidatas.</p>}
+            </div>
+          )}
+
+          {chosenOption && missingLines.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3" data-testid="asignacion-shortfall">
+              <p className="text-sm text-amber-800">
+                Faltante en {chosenOption.name}: {missingLines.map((l) => `${l.sku} ×${l.missing}`).join(', ')}
+              </p>
+              {pendingTransferId ? (
+                <p className="text-sm text-amber-800" data-testid="asignacion-waiting-transfer">
+                  Esperando traslado {pendingTransferId}
+                </p>
+              ) : shortfallCandidates.length === 0 ? (
+                <button type="button" onClick={handleLoadCandidates} className="px-4 py-2 bg-white border border-amber-300 text-sm font-medium rounded-lg" data-testid="asignacion-find-source">
+                  Buscar origen del faltante
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <select value={shortfallSource} onChange={(e) => setShortfallSource(e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white" data-testid="asignacion-shortfall-source">
+                    <option value="">Seleccionar origen...</option>
+                    {shortfallCandidates.map((id) => (
+                      <option key={id} value={id}>{id}</option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={handleCreateShortfallTransfer} disabled={submitting || !shortfallSource} className="px-4 py-2 bg-brand-primary text-white text-sm font-medium rounded-lg disabled:opacity-50" data-testid="asignacion-shortfall-submit">
+                    Crear traslado
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { coverage, preselectLocation, validateAssign } from './assignment';
+import { coverage, preselectLocation, validateAssign, shortfall, sourceCandidates } from './assignment';
 import type { FulfillmentOption } from './api';
 
 function option(overrides: Partial<FulfillmentOption>): FulfillmentOption {
@@ -40,5 +40,28 @@ describe('validateAssign', () => {
     expect(validateAssign({ alreadyAssigned: true, reason: '' })).toBe('Indicá el motivo del cambio');
     expect(validateAssign({ alreadyAssigned: true, reason: 'x' })).toBeNull();
     expect(validateAssign({ alreadyAssigned: false, reason: '' })).toBeNull();
+  });
+});
+
+describe('shortfall', () => {
+  it('returns lines missing stock', () => {
+    const opt = option({ lines: [{ sku: 'SKU-1', requested: 3, available: 1 }, { sku: 'SKU-2', requested: 2, available: 2 }] });
+    expect(shortfall(opt)).toEqual([{ sku: 'SKU-1', missing: 2 }]);
+  });
+});
+
+describe('sourceCandidates', () => {
+  const rows = [
+    { locationId: 'l-2', sku: 'SKU-1', available: 5 },
+    { locationId: 'l-3', sku: 'SKU-1', available: 1 },
+  ];
+  const missing = [{ sku: 'SKU-1', missing: 2 }];
+
+  it('lists locations covering the whole shortfall, excluding one', () => {
+    expect(sourceCandidates(rows, missing, 'l-1')).toEqual(['l-2']);
+  });
+
+  it('returns empty when nothing covers it', () => {
+    expect(sourceCandidates(rows, [{ sku: 'SKU-1', missing: 9 }], 'l-1')).toEqual([]);
   });
 });

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { backofficeApi, type Location, type LocationRole } from '@/lib/api';
+import { useAuth } from '@/contexts/auth-context';
 import { validateLocationForm } from '@/lib/locations';
 import { apiErrorMessage } from '@/lib/api-errors';
 
@@ -10,6 +11,7 @@ const ALL_ROLES: LocationRole[] = ['FARM', 'BULK_STORAGE', 'PLANT', 'PACKED_STOR
 const emptyForm = { code: '', name: '', roles: [] as string[], suppliedBy: '' };
 
 export default function UbicacionesPage() {
+  const { user } = useAuth();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -83,9 +85,9 @@ export default function UbicacionesPage() {
         ...(form.suppliedBy ? { suppliedBy: form.suppliedBy } : {}),
       };
       if (editingId) {
-        await backofficeApi.updateLocation(editingId, { name: data.name, roles: data.roles as LocationRole[], suppliedBy: form.suppliedBy || undefined });
+                await backofficeApi.updateLocation(editingId, { name: data.name, roles: data.roles as LocationRole[], suppliedBy: form.suppliedBy || undefined, actorId: user?.userId ?? '', at: new Date().toISOString() });
       } else {
-        await backofficeApi.createLocation({ ...data, roles: data.roles as LocationRole[] });
+        await backofficeApi.createLocation({ ...data, roles: data.roles as LocationRole[], actorId: user?.userId ?? '', at: new Date().toISOString() });
       }
       setShowForm(false);
       await reload();

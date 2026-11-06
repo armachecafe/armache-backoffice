@@ -5,7 +5,7 @@ import { backofficeApi, type BackofficeProduct } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { LocationPicker } from '@/components/inventory/location-picker';
 import { ScanInput } from '@/components/inventory/scan-input';
-import { parseScan, addCountScan } from '@/lib/scan-session';
+import { parseScan } from '@/lib/scan-session';
 import { buildCountRequest } from '@/lib/count';
 import { apiErrorMessage } from '@/lib/api-errors';
 
@@ -14,12 +14,13 @@ interface NewLotForm {
   sku: string;
   roastedAt: string;
   bestBefore: string;
+  initialGrams: string;
 }
 
 export default function ConteosPage() {
   const { user } = useAuth();
   const [locationId, setLocationId] = useState('');
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [counts, setCounts] = useState<Record<string, { bags: number; gramsPerBag: number }>>({});
   const [reason, setReason] = useState('');
   const [countReferenceId, setCountReferenceId] = useState(() => crypto.randomUUID());
   const [newLot, setNewLot] = useState<NewLotForm | null>(null);
@@ -47,17 +48,22 @@ export default function ConteosPage() {
     }
     try {
       await backofficeApi.getLot(parsed.lotCode);
-      setCounts((c) => addCountScan(c, parsed.lotCode));
+      setCounts((c) => ({ ...c, [parsed.lotCode]: { bags: (c[parsed.lotCode]?.bags ?? 0) + 1, gramsPerBag: c[parsed.lotCode]?.gramsPerBag ?? 0 } }));
     } catch {
       const products = await backofficeApi.listProducts({ pageSize: 50 }).catch(() => ({ items: [] as BackofficeProduct[] }));
       setProducts(products.items ?? []);
-      setNewLot({ lotCode: parsed.lotCode, sku: '', roastedAt: '', bestBefore: parsed.bestBefore ?? '' });
+      setNewLot({ lotCode: parsed.lotCode, sku: '', roastedAt: '', bestBefore: parsed.bestBefore ?? '', initialGrams: '' });
     }
   }
 
   async function handleSaveNewLot(e: React.FormEvent) {
     e.preventDefault();
     if (!newLot || !newLot.sku || !newLot.roastedAt || !newLot.bestBefore) return;
+    const initialGrams = Math.floor(Number(newLot.initialGrams));
+    if (!Number.isInteger(initialGrams) || initialGrams <= 0) {
+      setError('Indicá los gramos iniciales');
+      return;
+    }
     setSavingLot(true);
     setError('');
     try {
@@ -67,10 +73,12 @@ export default function ConteosPage() {
         sku: newLot.sku,
         roastedAt: new Date(newLot.roastedAt).toISOString(),
         bestBefore: new Date(newLot.bestBefore).toISOString(),
+        locationId,
+        initialQuantityGrams: initialGrams,
         actorId: user?.userId ?? '',
         at: new Date().toISOString(),
       });
-      setCounts((c) => ({ ...c, [newLot.lotCode]: c[newLot.lotCode] ?? 0 }));
+      setCounts((c) => ({ ...c, [newLot.lotCode]: { bags: c[newLot.lotCode]?.bags ?? 0, gramsPerBag: initialGrams } }));
       setNewLot(null);
     } catch (err) {
       setError(apiErrorMessage(err, 'No se pudo registrar el lote'));
@@ -81,20 +89,21 @@ export default function ConteosPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const lines = Object.entries(counts).map(([lotCode, v]) => ({ lotCode, bags: v.bags, gramsPerBag: v.gramsPerBag }));
+    if (lines.length === 0) {
+      setError('Agregá al menos un lote al conteo');
+      return;
+    }
     const built = buildCountRequest({
       referenceId: countReferenceId,
       locationId,
       reason,
-      counts,
+      lines,
       actorId: user?.userId ?? '',
       at: new Date().toISOString(),
     });
     if (!built.ok) {
       setError(built.error);
-      return;
-    }
-    if (Object.keys(counts).length === 0) {
-      setError('Agregá al menos un lote al conteo');
       return;
     }
     setSubmitting(true);
@@ -149,7 +158,11 @@ export default function ConteosPage() {
                   <input id="new-lot-best-before" type="date" value={newLot.bestBefore} onChange={(e) => setNewLot({ ...newLot, bestBefore: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" data-testid="new-lot-best-before" />
                 </div>
               </div>
-              <button type="submit" disabled={savingLot || !newLot.sku || !newLot.roastedAt || !newLot.bestBefore} className="px-4 py-2 bg-brand-primary text-white text-sm font-medium rounded-lg disabled:opacity-50" data-testid="new-lot-submit">
+              <div>
+                <label htmlFor="new-lot-grams" className="block text-sm font-medium text-gray-700 mb-1">Cantidad inicial (gramos, entero)</label>
+                <input id="new-lot-grams" type="number" min="1" step="1" value={newLot.initialGrams} onChange={(e) => setNewLot({ ...newLot, initialGrams: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ej: 5000" data-testid="new-lot-grams" />
+              </div>
+              <button type="submit" disabled={savingLot || !newLot.sku || !newLot.roastedAt || !newLot.bestBefore || !newLot.initialGrams} className="px-4 py-2 bg-brand-primary text-white text-sm font-medium rounded-lg disabled:opacity-50" data-testid="new-lot-submit">
                 {savingLot ? 'Registrando...' : 'Registrar lote'}
               </button>
             </form>
@@ -157,18 +170,32 @@ export default function ConteosPage() {
 
           {Object.keys(counts).length > 0 && (
             <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100" data-testid="count-lines">
-              {Object.entries(counts).map(([lotCode, qty]) => (
-                <div key={lotCode} className="flex items-center gap-3 px-4 py-3">
-                  <span className="font-mono text-sm font-medium text-brand-primary flex-1">{lotCode}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={qty}
-                    onChange={(e) => setCounts((c) => ({ ...c, [lotCode]: Math.max(0, Math.floor(Number(e.target.value) || 0)) }))}
-                    className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm text-right"
-                    data-testid={`count-qty-${lotCode}`}
-                  />
+              {Object.entries(counts).map(([lotCode, v]) => (
+                <div key={lotCode} className="flex items-center gap-2 px-4 py-3 flex-wrap">
+                  <span className="font-mono text-sm font-medium text-brand-primary flex-1 min-w-24">{lotCode}</span>
+                  <label className="text-xs text-gray-500">Bolsas
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={v.bags}
+                      onChange={(e) => setCounts((c) => ({ ...c, [lotCode]: { ...c[lotCode], bags: Math.max(0, Math.floor(Number(e.target.value) || 0)) } }))}
+                      className="w-20 ml-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-right"
+                      data-testid={`count-qty-${lotCode}`}
+                    />
+                  </label>
+                  <label className="text-xs text-gray-500">g/bolsa
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={v.gramsPerBag || ''}
+                      onChange={(e) => setCounts((c) => ({ ...c, [lotCode]: { ...c[lotCode], gramsPerBag: Math.max(0, Math.floor(Number(e.target.value) || 0)) } }))}
+                      className="w-20 ml-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-right"
+                      data-testid={`count-gpb-${lotCode}`}
+                    />
+                  </label>
+                  <span className="text-xs font-medium text-gray-700 w-20 text-right" data-testid={`count-grams-${lotCode}`}>{v.bags * v.gramsPerBag} g</span>
                   <button type="button" onClick={() => setCounts((c) => { const next = { ...c }; delete next[lotCode]; return next; })} className="text-sm text-gray-400 hover:text-red-600" data-testid={`count-remove-${lotCode}`}>
                     Quitar
                   </button>

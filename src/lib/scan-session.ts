@@ -1,6 +1,6 @@
 export interface ParsedScan {
   ok: true;
-  gtin: string;
+  gtin?: string;
   lotCode: string;
   bestBefore?: string;
   quantity?: number;
@@ -12,28 +12,49 @@ export interface UnreadableScan {
 }
 
 /**
- * Parses a GS1-128 code like `(01)07701234567898(10)LOT-A(15)261201(37)5`.
- * Unknown AIs are ignored. Returns UNREADABLE without GTIN or lot.
+ * Parses a GS1-128 scan in either representation: parenthesized (`(01)..(10)..`) as
+ * printed for humans, or bare (`01..10..`, optionally GS-separated and with a `]C0`/`]C1`
+ * symbology prefix) as keyboard-wedge scanners emit it. Returns UNREADABLE when no lot
+ * (AI 10) is found. Unknown AIs are ignored. Matches what the backend ship endpoint accepts
+ * (verified live: bare `10<lote>` works, unknown AIs are rejected server-side).
  */
 export function parseScan(raw: string): ParsedScan | UnreadableScan {
-  const clean = raw.replace(/[\s\x00-\x1F\x7F]/g, '');
-  if (!clean) return { ok: false, error: 'UNREADABLE' };
+  const normalized = raw.replace(/^]C[01]/, '');
   const fields: Record<string, string> = {};
-  const re = /\((\d{2,4})\)([^()]*)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(clean)) !== null) {
-    fields[m[1]] = m[2];
+  for (const segment of normalized.split('\u001D')) {
+    let rest = segment.replace(/[\s\x00-\x1F\x7F]/g, '');
+    if (!rest) continue;
+    // Parenthesized groups first: (AI)data(AI)data...
+    const groupRe = /\((\d{2,4})\)([^()]*)/g;
+    let consumed = false;
+    let gm: RegExpExecArray | null;
+    while ((gm = groupRe.exec(rest)) !== null) {
+      fields[gm[1]] = gm[2];
+      consumed = true;
+    }
+    if (consumed) continue;
+    // Bare AI prefixes. Fixed-length AIs take their chars; the rest is variable-length.
+    while (rest.length >= 2) {
+      const ai = rest.slice(0, 2);
+      if (!/^\d{2}$/.test(ai)) return { ok: false, error: 'UNREADABLE' };
+      const fixed: Record<string, number> = { '01': 14, '11': 6, '12': 6, '13': 6, '15': 6, '16': 6, '17': 6 };
+      const knownVariable = ai === '10' || ai === '21' || ai === '30' || ai === '37';
+      if (fixed[ai] === undefined && !knownVariable) break;
+      const take = fixed[ai] ?? rest.length - 2;
+      fields[ai] = rest.slice(2, 2 + take);
+      rest = rest.slice(2 + take);
+      if (rest.length > 0 && rest.length < 2) return { ok: false, error: 'UNREADABLE' };
+    }
   }
-  const gtin = fields['01'] ?? '';
   const lotCode = fields['10'] ?? '';
-  if (!gtin || !lotCode) return { ok: false, error: 'UNREADABLE' };
-  const result: ParsedScan = { ok: true, gtin, lotCode };
-  if (fields['15'] && /^\d{6}$/.test(fields['15'])) {
-    result.bestBefore = `20${fields['15'].slice(0, 2)}-${fields['15'].slice(2, 4)}-${fields['15'].slice(4, 6)}`;
+  if (!lotCode) return { ok: false, error: 'UNREADABLE' };
+  const result: ParsedScan = { ok: true, lotCode };
+  if (fields['01']) result.gtin = fields['01'];
+  const bestBefore = fields['15'] ?? fields['17'];
+  if (bestBefore && /^\d{6}$/.test(bestBefore)) {
+    result.bestBefore = `20${bestBefore.slice(0, 2)}-${bestBefore.slice(2, 4)}-${bestBefore.slice(4, 6)}`;
   }
-  if (fields['37'] && /^\d+$/.test(fields['37'])) {
-    result.quantity = parseInt(fields['37'], 10);
-  }
+  if (fields['37'] && /^\d+$/.test(fields['37'])) result.quantity = parseInt(fields['37'], 10);
   return result;
 }
 

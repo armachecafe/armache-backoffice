@@ -1,4 +1,4 @@
-import type { BackofficeOrderDetail, OrderFulfillment } from './api';
+import type { BackofficeOrderDetail, OrderFulfillment, PickScan } from './api';
 
 /**
  * Order with optional fulfillment info. The 1.4.0 contract does not return
@@ -17,5 +17,5 @@ export interface FulfillmentRow {
 
 /** Picked lots of the fulfillment, for the order detail section. */
 export function fulfillmentRows(order: OrderDetailWithFulfillment): FulfillmentRow[] {
-  return (order.fulfillment?.pickedLines ?? []).map((l) => ({ lotCode: l.lotCode, quantity: l.quantity }));
+  return (order.fulfillment?.pickedLines ?? []).map((l: PickScan) => ({ lotCode: l.lotCode, quantity: l.quantity }));
 }

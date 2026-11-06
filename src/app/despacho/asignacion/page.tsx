@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { backofficeApi, type BackofficeOrderSummary, type FulfillmentOption } from '@/lib/api';
+import { backofficeApi, type BackofficeOrderSummary, type FulfillmentOption, type FulfillmentOptionLine } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { coverage, validateAssign, shortfall, sourceCandidates } from '@/lib/assignment';
 import { apiErrorMessage } from '@/lib/api-errors';
@@ -168,7 +168,7 @@ export default function AsignacionPage() {
                       <span className="block text-xs text-gray-500">
                         {cov === 'ALL' ? 'Cubre todo' : cov === 'PARTIAL' ? 'Cubre parte' : 'Sin stock'}
                         {' · '}
-                        {opt.lines.map((l) => `${l.sku}: ${l.available}/${l.requested}`).join(', ')}
+                        {opt.lines.map((l: FulfillmentOptionLine) => `${l.sku}: ${l.available}/${l.requested}`).join(', ')}
                       </span>
                     </span>
                   </label>

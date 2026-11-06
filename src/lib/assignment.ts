@@ -1,10 +1,10 @@
-import type { FulfillmentOption } from './api';
+import type { FulfillmentOption, FulfillmentOptionLine } from './api';
 
 export type Coverage = 'ALL' | 'PARTIAL' | 'NONE';
 
 export function coverage(option: FulfillmentOption): Coverage {
   if (option.fullyAvailable) return 'ALL';
-  const anyAvailable = option.lines.some((l) => l.available > 0);
+  const anyAvailable = option.lines.some((l: FulfillmentOptionLine) => l.available > 0);
   return anyAvailable ? 'PARTIAL' : 'NONE';
 }
 
@@ -34,8 +34,8 @@ export interface ShortfallLine {
 /** Lines of an option that are not fully covered. */
 export function shortfall(option: FulfillmentOption): ShortfallLine[] {
   return option.lines
-    .map((l) => ({ sku: l.sku, missing: l.requested - l.available }))
-    .filter((l) => l.missing > 0);
+    .map((l: FulfillmentOptionLine) => ({ sku: l.sku, missing: l.requested - l.available }))
+    .filter((l: { missing: number }) => l.missing > 0);
 }
 
 export interface StockAvailability {

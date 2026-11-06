@@ -9,6 +9,13 @@ import { parseScan, addCountScan, addLineScan, isComplete, type PickLine } from 
 import { validateNewTransfer, buildReceiveLines, receiveShortfall, type ReceivedLine } from '@/lib/transfers';
 import { apiErrorMessage } from '@/lib/api-errors';
 
+/** Structural view of a transfer line; holds under stub (any) and real contract types. */
+interface TransferLineView {
+  sku: string;
+  quantity: number;
+  lots: { lotCode: string; shipped: number }[];
+}
+
 export default function TrasladosPage() {
   const { user } = useAuth();
   const [locationId, setLocationId] = useState('');
@@ -89,7 +96,7 @@ export default function TrasladosPage() {
       );
       const bySku = new Map<string, { sku: string; quantity: number; lots: { lotCode: string; shipped: number }[] }>();
       for (const l of lots) {
-        const entry = bySku.get(l.sku) ?? { sku: l.sku, quantity: 0, lots: [] };
+        const entry = bySku.get(l.sku) ?? { sku: l.sku, quantity: 0, lots: [] as { lotCode: string; shipped: number }[] };
         entry.quantity += l.quantity;
         entry.lots.push({ lotCode: l.lotCode, shipped: l.quantity });
         bySku.set(l.sku, entry);
@@ -117,7 +124,7 @@ export default function TrasladosPage() {
     setReceiveTransfer(null);
     setShipTransfer(t);
     setShipLines(
-      t.lines.map((l) => ({
+      t.lines.map((l: TransferLineView) => ({
         sku: l.sku,
         quantity: l.quantity,
         lots: l.lots.filter((s) => s.shipped > 0).map((s) => ({ lotCode: s.lotCode, quantity: s.shipped })),
@@ -206,7 +213,7 @@ export default function TrasladosPage() {
     }
   }
 
-  const shippedLots = (receiveTransfer?.lines ?? []).flatMap((l) => l.lots);
+  const shippedLots = (receiveTransfer?.lines ?? []).flatMap((l: TransferLineView) => l.lots);
   const shortfall = receiveShortfall(receiveLines, shippedLots);
 
   return (
@@ -229,7 +236,7 @@ export default function TrasladosPage() {
                   <div key={t.transferId} className="px-4 py-3 flex items-center justify-between">
                     <div>
                       <p className="font-mono text-sm font-medium text-brand-primary">{t.transferId}</p>
-                      <p className="text-xs text-gray-500">{t.status} · {t.lines.reduce((n, l) => n + l.quantity, 0)} u.</p>
+                      <p className="text-xs text-gray-500">{t.status} · {t.lines.reduce((n: number, l: { quantity: number }) => n + l.quantity, 0)} u.</p>
                     </div>
                     {t.status === 'REQUESTED' && (
                       <button onClick={() => openShip(t)} className="text-sm text-brand-primary hover:underline" data-testid={`traslado-ship-${t.transferId}`}>
@@ -252,7 +259,7 @@ export default function TrasladosPage() {
                   <div key={t.transferId} className="px-4 py-3 flex items-center justify-between">
                     <div>
                       <p className="font-mono text-sm font-medium text-brand-primary">{t.transferId}</p>
-                      <p className="text-xs text-gray-500">{t.status} · {t.lines.reduce((n, l) => n + l.quantity, 0)} u.</p>
+                      <p className="text-xs text-gray-500">{t.status} · {t.lines.reduce((n: number, l: { quantity: number }) => n + l.quantity, 0)} u.</p>
                     </div>
                     <button onClick={() => openReceive(t)} className="text-sm text-brand-primary hover:underline" data-testid={`traslado-receive-${t.transferId}`}>
                       Recibir

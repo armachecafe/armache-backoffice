@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Factory, Clock, User, ScanLine, Truck } from 'lucide-react';
+import { Factory, Clock, User, ScanLine, Truck, PackageCheck } from 'lucide-react';
 
 const mobileNavItems = [
   { href: '/produccion', label: 'Producción', icon: Factory },
   { href: '/produccion/historial', label: 'Historial', icon: Clock },
   { href: '/inventario/conteos', label: 'Conteos', icon: ScanLine },
   { href: '/inventario/traslados', label: 'Traslados', icon: Truck },
+  { href: '/despacho/preparacion', label: 'Preparación', icon: PackageCheck },
   { href: '/login', label: 'Perfil', icon: User },
 ];
 

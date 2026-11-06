@@ -39,6 +39,7 @@ const navItems: NavItem[] = [
   { href: '/inventario/conteos', label: 'Conteos', icon: ScanLine, group: 'Inventario', permission: 'inventory:count' },
   { href: '/inventario/traslados', label: 'Traslados', icon: Truck, group: 'Inventario', permission: 'inventory:transfer' },
   { href: '/despacho/asignacion', label: 'Asignación', icon: ClipboardList, group: 'Despacho', permission: 'order:assign' },
+  { href: '/despacho/preparacion', label: 'Preparación', icon: PackageCheck, group: 'Despacho', permission: 'order:pick' },
   { href: '/produccion', label: 'Producción', icon: Factory, permission: 'mes:order:create' },
   { href: '/produccion/historial', label: 'Historial MES', icon: Factory, permission: 'mes:order:view' },
   { href: '/trazabilidad', label: 'Trazabilidad', icon: Search, permission: 'traceability:lot:view' },

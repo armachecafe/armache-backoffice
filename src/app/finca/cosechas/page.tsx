@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { backofficeApi, type HarvestRecord } from '@/lib/api';
-import { farmSelectState, NO_FARMS_MESSAGE } from '@/lib/harvest';
+import { farmSelectState, toFarmOptions, NO_FARMS_MESSAGE } from '@/lib/harvest';
 
 export default function CosechasPage() {
   const [farms, setFarms] = useState<{ farmId: string }[]>([]);
@@ -18,8 +18,8 @@ export default function CosechasPage() {
   useEffect(() => {
     setFarmsLoading(true);
     backofficeApi
-      .listHarvestFarms()
-      .then(setFarms)
+      .listLocations({ role: 'FARM' })
+      .then((locs) => setFarms(toFarmOptions(locs)))
       .catch(() => {})
       .finally(() => setFarmsLoading(false));
   }, []);

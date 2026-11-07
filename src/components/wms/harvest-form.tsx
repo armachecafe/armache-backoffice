@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { backofficeApi } from '@/lib/api';
-import { farmSelectState, NO_FARMS_MESSAGE, FARMS_LOAD_ERROR_MESSAGE } from '@/lib/harvest';
+import { farmSelectState, toFarmOptions, NO_FARMS_MESSAGE, FARMS_LOAD_ERROR_MESSAGE } from '@/lib/harvest';
 
 interface HarvestFormProps {
   onSuccess: () => void;
@@ -26,8 +26,8 @@ export function HarvestForm({ onSuccess }: HarvestFormProps) {
     setFarmsLoading(true);
     setFarmsError(false);
     backofficeApi
-      .listHarvestFarms()
-      .then(setFarms)
+      .listLocations({ role: 'FARM' })
+      .then((locs) => setFarms(toFarmOptions(locs)))
       .catch(() => setFarmsError(true))
       .finally(() => setFarmsLoading(false));
   }, []);

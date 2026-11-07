@@ -3,6 +3,7 @@ import {
   validateHarvestForm,
   buildHarvestGeo,
   farmSelectState,
+  toFarmOptions,
   NO_FARMS_MESSAGE,
   FARMS_LOAD_ERROR_MESSAGE,
 } from './harvest';
@@ -78,7 +79,28 @@ describe('farmSelectState', () => {
 
   it('pins the user-facing copy', () => {
     expect(NO_FARMS_MESSAGE).toContain('No hay fincas registradas');
-    expect(NO_FARMS_MESSAGE).toContain('API');
+    expect(NO_FARMS_MESSAGE).toContain('FARM');
     expect(FARMS_LOAD_ERROR_MESSAGE).toContain('No se pudieron cargar las fincas');
+  });
+});
+
+describe('toFarmOptions', () => {
+  it('maps active FARM locations by code', () => {
+    expect(toFarmOptions([{ code: 'F-ARM', active: true }])).toEqual([{ farmId: 'F-ARM' }]);
+  });
+
+  it('drops locations without code and inactive ones', () => {
+    expect(
+      toFarmOptions([
+        { code: '', active: true },
+        { active: true },
+        { code: 'OLD', active: false },
+        { code: 'F-ARM', active: true },
+      ]),
+    ).toEqual([{ farmId: 'F-ARM' }]);
+  });
+
+  it('returns empty when no location qualifies', () => {
+    expect(toFarmOptions([])).toEqual([]);
   });
 });

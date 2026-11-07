@@ -43,10 +43,18 @@ export function farmSelectState(input: {
   return 'ready';
 }
 
-/** Shown when the backend has no farms: the form cannot be submitted. */
+/** Shown when no FARM location exists: the form cannot be submitted. */
 export const NO_FARMS_MESSAGE =
-  'No hay fincas registradas. La primera cosecha debe cargarse por API para habilitar esta lista.';
+  'No hay fincas registradas. Pedí que den de alta una finca (rol FARM en Ubicaciones) para habilitar esta lista.';
 
 /** Shown when the farms request itself fails. */
 export const FARMS_LOAD_ERROR_MESSAGE =
   'No se pudieron cargar las fincas. Revisá la conexión e intentá de nuevo.';
+
+/** Farm master = Location with FARM role (S3). The combo uses the location
+ * code as farmId, so harvests stay linked by free text without a new endpoint. */
+export function toFarmOptions(locations: { code?: string; active?: boolean }[]): FarmOption[] {
+  return locations
+    .filter((l) => typeof l.code === 'string' && l.code !== '' && l.active !== false)
+    .map((l) => ({ farmId: l.code as string }));
+}

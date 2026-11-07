@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { backofficeApi } from '@/lib/api';
+import { farmSelectState, toFarmOptions, NO_FARMS_MESSAGE, FARMS_LOAD_ERROR_MESSAGE } from '@/lib/harvest';
 
 interface HarvestFormProps {
   onSuccess: () => void;
@@ -9,6 +10,8 @@ interface HarvestFormProps {
 
 export function HarvestForm({ onSuccess }: HarvestFormProps) {
   const [farms, setFarms] = useState<{ farmId: string }[]>([]);
+  const [farmsLoading, setFarmsLoading] = useState(true);
+  const [farmsError, setFarmsError] = useState(false);
   const [farmId, setFarmId] = useState('');
   const [cherryKgGrams, setCherryKgGrams] = useState('');
   const [quality, setQuality] = useState<'MADURO' | 'MIXTO' | 'VERDE' | ''>('');
@@ -20,8 +23,16 @@ export function HarvestForm({ onSuccess }: HarvestFormProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    backofficeApi.listHarvestFarms().then(setFarms).catch(() => {});
+    setFarmsLoading(true);
+    setFarmsError(false);
+    backofficeApi
+      .listLocations({ role: 'FARM' })
+      .then((locs) => setFarms(toFarmOptions(locs)))
+      .catch(() => setFarmsError(true))
+      .finally(() => setFarmsLoading(false));
   }, []);
+
+  const farmsState = farmSelectState({ loading: farmsLoading, loadError: farmsError, farms });
 
   const grams = Number(cherryKgGrams);
   const valid =
@@ -66,6 +77,12 @@ export function HarvestForm({ onSuccess }: HarvestFormProps) {
             <option key={f.farmId} value={f.farmId}>{f.farmId}</option>
           ))}
         </select>
+        {farmsState === 'empty' && (
+          <p className="mt-1 text-sm text-amber-700" data-testid="harvest-no-farms">{NO_FARMS_MESSAGE}</p>
+        )}
+        {farmsState === 'error' && (
+          <p className="mt-1 text-sm text-red-600" data-testid="harvest-farms-error">{FARMS_LOAD_ERROR_MESSAGE}</p>
+        )}
       </div>
 
       <div>

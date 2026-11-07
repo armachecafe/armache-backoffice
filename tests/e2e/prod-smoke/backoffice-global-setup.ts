@@ -8,9 +8,12 @@ import { dirname } from 'node:path';
  *
  * Requires env vars:
  *   BACKOFFICE_URL        (default https://admin.armachecafe.com)
- *   BACKOFFICE_EMAIL      (Backoffice pool user email)
- *   BACKOFFICE_PASSWORD   (Backoffice pool user password)
+ *   BACKOFFICE_EMAIL | STAFF_EMAIL      (Backoffice pool user email)
+ *   BACKOFFICE_PASSWORD | STAFF_PASSWORD (Backoffice pool user password)
  *   BACKOFFICE_STORAGE_STATE (default tests/e2e/prod-smoke/.auth/backoffice-state.json)
+ *
+ * BACKOFFICE_* gana sobre STAFF_*. Se aceptan ambas porque el login spec y CI
+ * usan STAFF_* mientras este setup usaba BACKOFFICE_* (ver spec harvest-distribution-live).
  *
  * If credentials are absent, writes an empty storageState so the login spec
  * can still validate form rendering (will skip auth-dependent specs).
@@ -18,8 +21,8 @@ import { dirname } from 'node:path';
 async function globalSetup(_config: FullConfig) {
   const baseURL = process.env.BACKOFFICE_URL ?? 'https://admin.armachecafe.com';
   const statePath = process.env.BACKOFFICE_STORAGE_STATE ?? 'tests/e2e/prod-smoke/.auth/backoffice-state.json';
-  const email = process.env.BACKOFFICE_EMAIL;
-  const password = process.env.BACKOFFICE_PASSWORD;
+  const email = process.env.BACKOFFICE_EMAIL ?? process.env.STAFF_EMAIL;
+  const password = process.env.BACKOFFICE_PASSWORD ?? process.env.STAFF_PASSWORD;
 
   mkdirSync(dirname(statePath), { recursive: true });
 
@@ -41,7 +44,7 @@ async function globalSetup(_config: FullConfig) {
       console.warn(`[backoffice-prod-smoke] UI login failed, saving guest state: ${(err as Error).message}`);
     }
   } else {
-    console.warn('[backoffice-prod-smoke] No BACKOFFICE_EMAIL/PASSWORD — saving guest storageState.');
+    console.warn('[backoffice-prod-smoke] No BACKOFFICE_EMAIL/STAFF_EMAIL — saving guest storageState.');
   }
 
   await context.storageState({ path: statePath });

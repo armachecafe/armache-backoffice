@@ -76,37 +76,47 @@ test.describe('live e2e: cosecha → distribución (read-only walk)', () => {
   });
 
   test('combo de fincas: con opciones permite elegir, vacío muestra el aviso', async ({ page }) => {
+    // Espera del lado Node (el CSP de prod bloquea waitForFunction con eval):
+    // sondea opciones y avisos hasta que el combo resuelva a un estado final.
+    async function farmComboState(
+      selectTestId: string,
+      emptyTestId: string,
+      errorTestId?: string,
+    ): Promise<'ready' | 'empty' | 'error'> {
+      for (let i = 0; i < 30; i++) {
+        if ((await page.getByTestId(selectTestId).locator('option').count()) > 1) return 'ready';
+        if ((await page.getByTestId(emptyTestId).count()) > 0) return 'empty';
+        if (errorTestId && ((await page.getByTestId(errorTestId).count()) > 0)) return 'error';
+        await page.waitForTimeout(500);
+      }
+      throw new Error(`El combo ${selectTestId} no resolvió a un estado final en 15s`);
+    }
+
     const problems = attachConsoleGuard(page, test.info());
 
     // Formulario: el aviso de estado vacío y las opciones son excluyentes.
     await page.goto('/finca/cosechas/nueva/');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.getByTestId('harvest-form')).toBeVisible({ timeout: 15000 });
-    await expect
-      .poll(async () => page.getByTestId('harvest-farm-select').locator('option').count(), {
-        timeout: 15000,
-      })
-      .toBeGreaterThanOrEqual(1);
-    const optionCount = await page.getByTestId('harvest-farm-select').locator('option').count();
-    if (optionCount > 1) {
+    const formState = await farmComboState('harvest-farm-select', 'harvest-no-farms', 'harvest-farms-error');
+    if (formState === 'ready') {
       await expect(page.getByTestId('harvest-no-farms')).toHaveCount(0);
       await expect(page.getByTestId('harvest-farms-error')).toHaveCount(0);
-    } else {
+    } else if (formState === 'empty') {
       await expect(page.getByTestId('harvest-no-farms')).toBeVisible({ timeout: 5000 });
       expect(await page.getByTestId('harvest-no-farms').textContent()).toContain(
         'No hay fincas registradas',
       );
+    } else {
+      await expect(page.getByTestId('harvest-farms-error')).toBeVisible({ timeout: 5000 });
     }
 
     // Lista: mismo contrato en el filtro.
     await page.goto('/finca/cosechas/');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.getByTestId('cosechas-page')).toBeVisible({ timeout: 15000 });
-    const filterCount = await page
-      .getByTestId('cosechas-farm-filter')
-      .locator('option')
-      .count();
-    if (filterCount > 1) {
+    const listState = await farmComboState('cosechas-farm-filter', 'cosechas-no-farms-options');
+    if (listState === 'ready') {
       await expect(page.getByTestId('cosechas-no-farms-options')).toHaveCount(0);
     } else {
       await expect(page.getByTestId('cosechas-no-farms-options')).toBeVisible({ timeout: 5000 });

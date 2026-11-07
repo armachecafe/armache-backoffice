@@ -5,7 +5,15 @@ export interface HarvestFormValues {
   quality: HarvestQuality | '';
   harvester: string;
   harvestedAt: string;
-  cherryKgGrams: string;
+  cherryKg?: string;
+  cherryKgGrams?: string;
+}
+
+/** Exact kg validation: positive number with at most 3 decimals (resolution 1 g). */
+export function isKgAmount(value: unknown): value is number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return false;
+  const scaled = value * 1000;
+  return Math.abs(scaled - Math.round(scaled)) < 1e-6;
 }
 
 /** Returns the first validation error, or null when the form can be submitted. */
@@ -14,8 +22,10 @@ export function validateHarvestForm(form: HarvestFormValues): string | null {
   if (!form.quality) return 'Elegí la calidad';
   if (form.harvester.trim() === '') return 'Indicá quién cosechó';
   if (!form.harvestedAt) return 'Indicá la fecha de cosecha';
-  const grams = Number(form.cherryKgGrams);
-  if (!Number.isInteger(grams) || grams <= 0) return 'Los gramos deben ser un entero mayor a 0';
+  const raw = form.cherryKg ?? form.cherryKgGrams;
+  if (!raw || raw.trim() === '') return 'Los kilos deben ser un número mayor a 0 con hasta 3 decimales';
+  const kg = Number(raw);
+  if (!isKgAmount(kg)) return 'Los kilos deben ser un número mayor a 0 con hasta 3 decimales';
   return null;
 }
 

@@ -13,7 +13,7 @@ const base = {
   quality: 'MADURO' as const,
   harvester: 'Juan Perez',
   harvestedAt: '2026-11-01T06:00',
-  cherryKgGrams: '1200',
+  cherryKg: '1.2',
 };
 
 describe('validateHarvestForm', () => {
@@ -33,10 +33,12 @@ describe('validateHarvestForm', () => {
     expect(validateHarvestForm({ ...base, harvestedAt: '' })).toBe('Indicá la fecha de cosecha');
   });
 
-  it('requires integer grams above zero', () => {
-    expect(validateHarvestForm({ ...base, cherryKgGrams: '0' })).toBe('Los gramos deben ser un entero mayor a 0');
-    expect(validateHarvestForm({ ...base, cherryKgGrams: '12.5' })).toBe('Los gramos deben ser un entero mayor a 0');
-    expect(validateHarvestForm({ ...base, cherryKgGrams: 'abc' })).toBe('Los gramos deben ser un entero mayor a 0');
+  it('requires kilograms above zero with at most 3 decimals', () => {
+    expect(validateHarvestForm({ ...base, cherryKg: '0' })).toBe('Los kilos deben ser un número mayor a 0 con hasta 3 decimales');
+    expect(validateHarvestForm({ ...base, cherryKg: '-5' })).toBe('Los kilos deben ser un número mayor a 0 con hasta 3 decimales');
+    expect(validateHarvestForm({ ...base, cherryKg: 'abc' })).toBe('Los kilos deben ser un número mayor a 0 con hasta 3 decimales');
+    expect(validateHarvestForm({ ...base, cherryKg: '12.5005' })).toBe('Los kilos deben ser un número mayor a 0 con hasta 3 decimales');
+    expect(validateHarvestForm({ ...base, cherryKg: '12.5' })).toBeNull();
   });
 
   it('accepts a valid form', () => {

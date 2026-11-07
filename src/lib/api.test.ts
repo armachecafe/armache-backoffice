@@ -143,7 +143,7 @@ describe('backofficeApi harvests (finca)', () => {
     const input = {
       harvestReferenceId: 'harv-001',
       farmId: 'finca-el-mirador',
-      cherryKgGrams: 1200,
+      cherryKg: 1.2,
       quality: 'MADURO' as const,
       harvester: 'Juan Perez',
       harvestedAt: '2026-11-01T06:00:00.000Z',
@@ -164,7 +164,7 @@ describe('backofficeApi harvests (finca)', () => {
       harvestId: 'h-1',
       harvestReferenceId: 'harv-001',
       farmId: 'finca-el-mirador',
-      cherryKgGrams: 1200,
+      cherryKg: 1.2,
       quality: 'MADURO',
       harvester: 'Juan Perez',
       harvestedAt: '2026-11-01T06:00:00.000Z',
@@ -200,7 +200,7 @@ describe('backofficeApi harvests (finca)', () => {
       harvestId: 'h-1',
       harvestReferenceId: 'harv-001',
       farmId: 'finca-el-mirador',
-      cherryKgGrams: 1200,
+      cherryKg: 1.2,
       quality: 'MADURO',
       harvester: 'Juan Perez',
       harvestedAt: '2026-11-01T06:00:00.000Z',
@@ -307,7 +307,7 @@ describe('backofficeApi inventory core (O1)', () => {
   });
 
   it('createCount POSTs the count and returns the result', async () => {
-    const input = { countReferenceId: 'cnt-1', locationId: 'l-1', reason: 'conteo inicial', lines: [{ lotCode: 'LOT-A', countedQuantity: 10 }], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
+    const input = { countReferenceId: 'cnt-1', locationId: 'l-1', reason: 'conteo inicial', lines: [{ lotCode: 'LOT-A', countedKg: 10 }], actorId: 'a-1', at: '2026-11-01T00:00:00.000Z' };
     const result = { success: true, countReferenceId: 'cnt-1' };
     fetchMock.mockResolvedValue({ ok: true, status: 201, json: async () => result });
 

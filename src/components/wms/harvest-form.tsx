@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { backofficeApi } from '@/lib/api';
-import { farmSelectState, toFarmOptions, NO_FARMS_MESSAGE, FARMS_LOAD_ERROR_MESSAGE } from '@/lib/harvest';
+import { farmSelectState, toFarmOptions, isKgAmount, NO_FARMS_MESSAGE, FARMS_LOAD_ERROR_MESSAGE } from '@/lib/harvest';
 
 interface HarvestFormProps {
   onSuccess: () => void;
@@ -13,7 +13,7 @@ export function HarvestForm({ onSuccess }: HarvestFormProps) {
   const [farmsLoading, setFarmsLoading] = useState(true);
   const [farmsError, setFarmsError] = useState(false);
   const [farmId, setFarmId] = useState('');
-  const [cherryKgGrams, setCherryKgGrams] = useState('');
+  const [cherryKg, setCherryKg] = useState('');
   const [quality, setQuality] = useState<'MADURO' | 'MIXTO' | 'VERDE' | ''>('');
   const [harvester, setHarvester] = useState('');
   const [harvestedAt, setHarvestedAt] = useState('');
@@ -34,14 +34,13 @@ export function HarvestForm({ onSuccess }: HarvestFormProps) {
 
   const farmsState = farmSelectState({ loading: farmsLoading, loadError: farmsError, farms });
 
-  const grams = Number(cherryKgGrams);
+  const kg = Number(cherryKg);
   const valid =
     farmId !== '' &&
     quality !== '' &&
     harvester.trim() !== '' &&
     harvestedAt !== '' &&
-    Number.isInteger(grams) &&
-    grams > 0;
+    isKgAmount(kg);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,7 +53,7 @@ export function HarvestForm({ onSuccess }: HarvestFormProps) {
         harvestReferenceId: crypto.randomUUID(),
         farmId,
         ...(farmGeo ? { farmGeo } : {}),
-        cherryKgGrams: grams,
+        cherryKg: kg,
         quality: quality as 'MADURO' | 'MIXTO' | 'VERDE',
         harvester: harvester.trim(),
         harvestedAt: new Date(harvestedAt).toISOString(),
@@ -86,8 +85,8 @@ export function HarvestForm({ onSuccess }: HarvestFormProps) {
       </div>
 
       <div>
-        <label htmlFor="harvest-kg" className="block text-sm font-medium text-gray-700 mb-1">Cereza (gramos, entero)</label>
-        <input id="harvest-kg" type="number" min="1" step="1" value={cherryKgGrams} onChange={(e) => setCherryKgGrams(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ej: 1200" data-testid="harvest-kg" />
+        <label htmlFor="harvest-kg" className="block text-sm font-medium text-gray-700 mb-1">Cereza (kg)</label>
+        <input id="harvest-kg" type="number" min="0.001" step="0.001" value={cherryKg} onChange={(e) => setCherryKg(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ej: 12.5" data-testid="harvest-kg" />
       </div>
 
       <div>

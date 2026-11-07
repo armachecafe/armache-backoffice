@@ -34,21 +34,21 @@ describe('harvest creation coverage', () => {
       harvester: 'Juan Perez',
       harvestedAt: '2026-11-01T06:00',
     };
-    expect(validateHarvestForm({ ...base, cherryKgGrams: '-5' })).toBe(
-      'Los gramos deben ser un entero mayor a 0',
+    expect(validateHarvestForm({ ...base, cherryKg: '-5' })).toBe(
+      'Los kilos deben ser un número mayor a 0 con hasta 3 decimales',
     );
-    expect(validateHarvestForm({ ...base, cherryKgGrams: '' })).toBe(
-      'Los gramos deben ser un entero mayor a 0',
+    expect(validateHarvestForm({ ...base, cherryKg: '' })).toBe(
+      'Los kilos deben ser un número mayor a 0 con hasta 3 decimales',
     );
-    expect(validateHarvestForm({ ...base, cherryKgGrams: '12.5' })).toBe(
-      'Los gramos deben ser un entero mayor a 0',
+    expect(validateHarvestForm({ ...base, cherryKg: '12.5005' })).toBe(
+      'Los kilos deben ser un número mayor a 0 con hasta 3 decimales',
     );
     // MIXTO y VERDE son válidos igual que MADURO.
     expect(
-      validateHarvestForm({ ...base, quality: 'MIXTO', cherryKgGrams: '1200' }),
+      validateHarvestForm({ ...base, quality: 'MIXTO', cherryKg: '1.2' }),
     ).toBeNull();
     expect(
-      validateHarvestForm({ ...base, quality: 'VERDE', cherryKgGrams: '1200' }),
+      validateHarvestForm({ ...base, quality: 'VERDE', cherryKg: '1.2' }),
     ).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -65,7 +65,7 @@ describe('harvest creation coverage', () => {
       backofficeApi.createHarvest({
         harvestReferenceId: 'harv-bad',
         farmId: '',
-        cherryKgGrams: 0,
+        cherryKg: 0,
         quality: 'MADURO',
         harvester: '',
         harvestedAt: AT,
@@ -105,7 +105,7 @@ describe('harvest to distribution flow (mocked)', () => {
         quality: 'MADURO',
         harvester: 'Juan Perez',
         harvestedAt: '2026-11-01T06:00',
-        cherryKgGrams: '1200',
+        cherryKg: '1.2',
       }),
     ).toBeNull();
     expect(buildHarvestGeo('4.71', '-75.68')).toEqual({ lat: 4.71, lon: -75.68 });
@@ -132,7 +132,7 @@ describe('harvest to distribution flow (mocked)', () => {
               harvestId: 'h-1',
               harvestReferenceId: 'harv-001',
               farmId: 'finca-el-mirador',
-              cherryKgGrams: 1200,
+              cherryKg: 1.2,
               quality: 'MADURO',
               harvester: 'Juan Perez',
               harvestedAt: '2026-11-01T06:00:00.000Z',
@@ -148,7 +148,7 @@ describe('harvest to distribution flow (mocked)', () => {
           harvestId: 'h-1',
           harvestReferenceId: 'harv-001',
           farmId: 'finca-el-mirador',
-          cherryKgGrams: 1200,
+          cherryKg: 1.2,
           quality: 'MADURO',
           harvester: 'Juan Perez',
           harvestedAt: '2026-11-01T06:00:00.000Z',
@@ -228,7 +228,7 @@ describe('harvest to distribution flow (mocked)', () => {
       harvestReferenceId: 'harv-001',
       farmId: 'finca-el-mirador',
       farmGeo: { lat: 4.71, lon: -75.68 },
-      cherryKgGrams: 1200,
+      cherryKg: 1.2,
       quality: 'MADURO',
       harvester: 'Juan Perez',
       harvestedAt: '2026-11-01T06:00:00.000Z',
@@ -273,7 +273,7 @@ describe('harvest to distribution flow (mocked)', () => {
         countReferenceId: 'cnt-1',
         locationId: 'l-cd',
         reason: 'conteo inicial',
-        lines: [{ lotCode: 'LOT-A', countedQuantity: 2500 }],
+        lines: [{ lotCode: 'LOT-A', countedKg: 2.5 }],
         actorId: 'a-1',
         at: AT,
       },

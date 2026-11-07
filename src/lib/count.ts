@@ -22,9 +22,9 @@ export type BuildCountResult =
   | { ok: false; error: string };
 
 /**
- * Builds a count request in grams: countedQuantity = bags × gramsPerBag.
- * The backend ledger works in grams and does no per-SKU conversion, so the
- * operator provides the per-bag weight and the UI converts.
+ * Builds a count request in kg: countedKg = (bags × gramsPerBag) / 1000.
+ * The backend wire speaks kg (max 3 decimals, 1g precision). The operator
+ * provides bags and grams per bag, and the UI computes exact countedKg.
  */
 export function buildCountRequest(input: CountInput): BuildCountResult {
   if (!input.reason.trim()) return { ok: false, error: 'El motivo es obligatorio' };
@@ -35,7 +35,7 @@ export function buildCountRequest(input: CountInput): BuildCountResult {
   }
   const lines = [...input.lines]
     .sort((a, b) => (a.lotCode < b.lotCode ? -1 : a.lotCode > b.lotCode ? 1 : 0))
-    .map((l) => ({ lotCode: l.lotCode, countedQuantity: l.bags * l.gramsPerBag }));
+    .map((l) => ({ lotCode: l.lotCode, countedKg: Math.round(l.bags * l.gramsPerBag) / 1000 }));
   return {
     ok: true,
     request: {

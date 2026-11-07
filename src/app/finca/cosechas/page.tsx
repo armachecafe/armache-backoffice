@@ -126,7 +126,7 @@ export default function CosechasPage() {
             >
               <div>
                 <p className="font-mono text-sm font-medium text-brand-primary">{h.harvestReferenceId}</p>
-                <p className="text-xs text-gray-500">{h.cherryKgGrams} g · {h.quality} · {h.harvester}</p>
+                <p className="text-xs text-gray-500">{h.cherryKg} kg · {h.quality} · {h.harvester}</p>
               </div>
               <span className="text-xs text-gray-400">{new Date(h.harvestedAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
             </button>
@@ -140,7 +140,7 @@ export default function CosechasPage() {
             <span className="px-3 py-1 bg-brand-primary/10 text-brand-primary font-mono text-sm font-semibold rounded-full">{selected.harvestReferenceId}</span>
             <span className="text-sm text-gray-600">{selected.farmId}</span>
           </div>
-          <p className="text-sm text-gray-700">Cereza: <span className="font-medium">{selected.cherryKgGrams} g</span> · Calidad: <span className="font-medium">{selected.quality}</span></p>
+          <p className="text-sm text-gray-700">Cereza: <span className="font-medium">{selected.cherryKg} kg</span> · Calidad: <span className="font-medium">{selected.quality}</span></p>
           <p className="text-sm text-gray-700">Cosechador: <span className="font-medium">{selected.harvester}</span></p>
           <p className="text-xs text-gray-400">
             Cosechada: {new Date(selected.harvestedAt).toLocaleString('es-PE')} · Registrada: {new Date(selected.createdAt).toLocaleString('es-PE')}

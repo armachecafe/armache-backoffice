@@ -42,8 +42,8 @@ describe('buildCountRequest', () => {
         locationId: 'l-1',
         reason: 'conteo',
         lines: [
-          { lotCode: 'LOT-A', countedQuantity: 1000 },
-          { lotCode: 'LOT-B', countedQuantity: 750 },
+          { lotCode: 'LOT-A', countedKg: 1 },
+          { lotCode: 'LOT-B', countedKg: 0.75 },
         ],
         actorId: 'a-1',
         at: '2026-11-01T00:00:00.000Z',

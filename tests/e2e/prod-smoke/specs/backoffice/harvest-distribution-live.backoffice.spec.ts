@@ -176,6 +176,63 @@ test.describe('live e2e: crear cosecha (escritura con guard)', () => {
     expect(problems.pageErrors, describeProblems(problems)).toHaveLength(0);
     expect(problems.serverErrors, describeProblems(problems)).toHaveLength(0);
   });
+
+  test('crea una finca FARM y le registra una cosecha', async ({ page }) => {
+    const problems = attachConsoleGuard(page, test.info());
+    const stamp = Date.now().toString().slice(-6);
+    const farmCode = `E2E-FINCA-${stamp}`;
+    const tag = `E2E-LIVE-${Date.now()}`;
+
+    // 1. Crear la finca (Location con rol FARM).
+    await page.goto('/inventario/ubicaciones/');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByTestId('ubicaciones-page')).toBeVisible({ timeout: 15000 });
+    await page.getByTestId('ubicaciones-new').click();
+    await expect(page.getByTestId('ubicacion-form')).toBeVisible({ timeout: 10000 });
+    await page.getByTestId('ubicacion-code').fill(farmCode);
+    await page.getByTestId('ubicacion-name').fill(`Finca E2E ${stamp}`);
+    await page.getByTestId('ubicacion-role-FARM').check();
+    await page.getByTestId('ubicacion-submit').click();
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('[data-testid="ubicaciones-table"]')).toContainText(farmCode, {
+      timeout: 15000,
+    });
+
+    // 2. La finca nueva llega al combo de cosechas (master Location FARM).
+    await page.goto('/finca/cosechas/nueva/');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByTestId('harvest-form')).toBeVisible({ timeout: 15000 });
+    await expect
+      .poll(async () => page.getByTestId('harvest-farm-select').locator('option').count(), {
+        timeout: 15000,
+      })
+      .toBeGreaterThan(1);
+    await page.getByTestId('harvest-farm-select').selectOption(farmCode);
+    await expect(page.getByTestId('harvest-no-farms')).toHaveCount(0);
+
+    // 3. Registrar la cosecha contra esa finca.
+    await page.getByTestId('harvest-kg').fill('1500');
+    await page.getByTestId('harvest-quality').selectOption('MIXTO');
+    await page.getByTestId('harvest-harvester').fill(tag);
+    await page.getByTestId('harvest-harvested-at').fill(new Date().toISOString().slice(0, 16));
+    await page.getByTestId('harvest-submit').click();
+    await expect(page).toHaveURL(/\/finca\/cosechas\/?$/, { timeout: 20000 });
+
+    // 4. Filtrar por la finca y abrir el detalle.
+    await expect(page.getByTestId('cosechas-page')).toBeVisible({ timeout: 15000 });
+    await page.getByTestId('cosechas-farm-filter').selectOption(farmCode);
+    await page.waitForLoadState('networkidle');
+    const newRow = page.locator('[data-testid^="cosecha-row-"]', { hasText: tag }).first();
+    await expect(newRow).toBeVisible({ timeout: 15000 });
+    await newRow.click();
+    await expect(page.getByTestId('cosecha-detail')).toBeVisible({ timeout: 15000 });
+    const detail = await page.getByTestId('cosecha-detail').textContent();
+    expect(detail).toContain(tag);
+    expect(detail).toContain(farmCode);
+
+    expect(problems.pageErrors, describeProblems(problems)).toHaveLength(0);
+    expect(problems.serverErrors, describeProblems(problems)).toHaveLength(0);
+  });
 });
 
 test.describe('live e2e: asignar + empezar preparación (pedido de prueba)', () => {

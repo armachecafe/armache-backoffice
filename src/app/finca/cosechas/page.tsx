@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { backofficeApi, type HarvestRecord } from '@/lib/api';
+import { farmSelectState, NO_FARMS_MESSAGE } from '@/lib/harvest';
 
 export default function CosechasPage() {
   const [farms, setFarms] = useState<{ farmId: string }[]>([]);
+  const [farmsLoading, setFarmsLoading] = useState(true);
   const [farmId, setFarmId] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -14,7 +16,12 @@ export default function CosechasPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    backofficeApi.listHarvestFarms().then(setFarms).catch(() => {});
+    setFarmsLoading(true);
+    backofficeApi
+      .listHarvestFarms()
+      .then(setFarms)
+      .catch(() => {})
+      .finally(() => setFarmsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -93,9 +100,15 @@ export default function CosechasPage() {
       </div>
 
       {!farmId ? (
-        <p className="text-sm text-gray-400" data-testid="cosechas-no-farm">
-          Seleccioná una finca para ver sus cosechas.
-        </p>
+        farmSelectState({ loading: farmsLoading, loadError: false, farms }) === 'empty' ? (
+          <p className="text-sm text-amber-700" data-testid="cosechas-no-farms-options">
+            {NO_FARMS_MESSAGE}
+          </p>
+        ) : (
+          <p className="text-sm text-gray-400" data-testid="cosechas-no-farm">
+            Seleccioná una finca para ver sus cosechas.
+          </p>
+        )
       ) : loading && harvests.length === 0 && !selected ? (
         <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)}</div>
       ) : harvests.length === 0 ? (
